@@ -3,6 +3,7 @@ package com.barili.survey.response;
 import com.barili.survey.question.UserGroup;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 
@@ -10,7 +11,7 @@ public record SurveySubmission(
         @NotBlank String linkToken,
         @NotNull UserGroup userGroup,
         @NotBlank String locale,
-        @NotNull Map<String, Object> answers,
+        @NotNull @Size(min = 1) Map<String, Object> answers,
         Map<String, String> otherAnswers
 ) {
     public Map<String, String> safeOtherAnswers() {

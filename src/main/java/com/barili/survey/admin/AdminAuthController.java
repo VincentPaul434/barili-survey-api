@@ -23,14 +23,17 @@ public class AdminAuthController {
     private final AdminSessionService sessionService;
     private final AdminAccountService accountService;
     private final boolean secureCookie;
+    private final String sameSite;
 
     public AdminAuthController(
             AdminSessionService sessionService,
             AdminAccountService accountService,
-            @Value("${survey.admin-cookie-secure:false}") boolean secureCookie) {
+            @Value("${survey.admin-cookie-secure:true}") boolean secureCookie,
+            @Value("${survey.admin-cookie-same-site:Lax}") String sameSite) {
         this.sessionService = sessionService;
         this.accountService = accountService;
         this.secureCookie = secureCookie;
+        this.sameSite = sameSite;
     }
 
     @PostMapping("/login")
@@ -63,7 +66,7 @@ public class AdminAuthController {
         return ResponseCookie.from(COOKIE_NAME, value)
                 .httpOnly(true)
                 .secure(secureCookie)
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .path("/api/admin")
                 .maxAge(sessionService.sessionTtl())
                 .build();
@@ -73,7 +76,7 @@ public class AdminAuthController {
         return ResponseCookie.from(COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(secureCookie)
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .path("/api/admin")
                 .maxAge(0)
                 .build();

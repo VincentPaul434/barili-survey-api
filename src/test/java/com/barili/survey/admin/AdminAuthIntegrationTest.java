@@ -20,7 +20,6 @@ import org.springframework.test.web.servlet.MvcResult;
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-        "survey.admin-username=admin",
         "spring.datasource.url=jdbc:h2:mem:barili-admin-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
@@ -75,7 +74,10 @@ class AdminAuthIntegrationTest {
 
         String submission = "{\"linkToken\":\"" + token
                 + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
-                + "\"answers\":{},\"otherAnswers\":{}}";
+                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
+                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
+                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
+                + "\"otherAnswers\":{}}";
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(submission))
@@ -88,6 +90,28 @@ class AdminAuthIntegrationTest {
 
         mockMvc.perform(get("/api/admin/responses")
                         .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void invalidSubmissionDoesNotConsumeLink() throws Exception {
+        String sessionCookie = login();
+        MvcResult linkResult = mockMvc.perform(post("/api/admin/survey-links")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userGroup\":\"STUDENT\",\"expiresInHours\":24}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String link = objectMapper.readTree(linkResult.getResponse().getContentAsString()).get("link").asText();
+        String token = link.substring(link.lastIndexOf("/survey/") + "/survey/".length());
+
+        mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"linkToken\":\"" + token + "\",\"userGroup\":\"STUDENT\","
+                                + "\"locale\":\"en\",\"answers\":{\"A1\":\"below_12\"},\"otherAnswers\":{}}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/survey-links/{token}", token))
                 .andExpect(status().isOk());
     }
 
