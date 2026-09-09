@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "question_options")
@@ -19,6 +20,7 @@ public class QuestionOption {
     private boolean allowsFreeText;
 
     @ManyToOne
+    @JsonIgnore
     private Question question;
 
     protected QuestionOption() {}
