@@ -20,7 +20,8 @@ The service exposes `GET /api/health`. On Render, `RENDER_EXTERNAL_URL` is used 
 - `POST /api/surveys` stores a response and its typed answers.
 - `POST /api/admin/login` starts the HttpOnly admin session.
 - `POST /api/admin/survey-links` generates a protected, single-use respondent link.
-- `GET /api/admin/responses` returns all submitted responses for the admin dashboard.
+- `GET /api/admin/responses?page=0&size=10` returns a cached page of response summaries. `size` is capped at 50.
+- `GET /api/admin/responses/{id}` returns the full answers for one response when an administrator opens its details.
 
 Example payload:
 
