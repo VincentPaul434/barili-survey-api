@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 public record SurveySubmission(
+        @NotBlank String linkToken,
         @NotNull UserGroup userGroup,
         @NotBlank String locale,
         @NotNull Map<String, Object> answers,

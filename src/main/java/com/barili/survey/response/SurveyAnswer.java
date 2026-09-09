@@ -40,4 +40,13 @@ public class SurveyAnswer {
     }
 
     void setResponse(SurveyResponse response) { this.response = response; }
+
+    public Question getQuestion() { return question; }
+    public String getOtherValue() { return otherValue; }
+
+    public String getDisplayValue() {
+        if (singleValue != null) return singleValue;
+        if (multiValueJson != null) return multiValueJson;
+        return textValue;
+    }
 }

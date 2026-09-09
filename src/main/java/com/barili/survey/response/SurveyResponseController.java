@@ -1,5 +1,6 @@
 package com.barili.survey.response;
 
+import com.barili.survey.link.SurveyLinkService;
 import com.barili.survey.question.Question;
 import com.barili.survey.question.QuestionRepository;
 import com.barili.survey.question.QuestionType;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/surveys")
@@ -21,18 +23,23 @@ public class SurveyResponseController {
     private final SurveyResponseRepository responseRepository;
     private final QuestionRepository questionRepository;
     private final ObjectMapper objectMapper;
+    private final SurveyLinkService surveyLinkService;
 
     public SurveyResponseController(SurveyResponseRepository responseRepository,
                                     QuestionRepository questionRepository,
-                                    ObjectMapper objectMapper) {
+                                    ObjectMapper objectMapper,
+                                    SurveyLinkService surveyLinkService) {
         this.responseRepository = responseRepository;
         this.questionRepository = questionRepository;
         this.objectMapper = objectMapper;
+        this.surveyLinkService = surveyLinkService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
     public SurveySubmissionResult submit(@Valid @RequestBody SurveySubmission submission) {
+        surveyLinkService.consume(submission.linkToken(), submission.userGroup());
         SurveyResponse response = new SurveyResponse(submission.userGroup(), submission.locale());
         Map<String, Object> answers = submission.answers();
 
