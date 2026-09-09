@@ -12,6 +12,8 @@ The default profile uses a file-backed H2 database at `./data/barili-survey`. Se
 
 Set `SURVEY_ADMIN_USERNAME` and `SURVEY_ADMIN_PASSWORD_HASH` to provision the initial admin account; the application has no built-in default credentials. Set `SPRING_PROFILES_ACTIVE=prod` for deployments, use PostgreSQL with `JPA_DDL_AUTO=validate`, set `SURVEY_ADMIN_COOKIE_SECURE=true`, and set `SURVEY_PUBLIC_BASE_URL` to the frontend origin used in generated respondent links. The admin logs in at `/admin/login`; the dashboard can generate single-use, expiring links and view submitted responses. Respondents open `/survey/{token}` and submit the token with their answers.
 
+The service exposes `GET /api/health`. On Render, `RENDER_EXTERNAL_URL` is used automatically for a lightweight self-ping every 10 minutes while the process is running. Configure `SELF_PING_URL`, `SELF_PING_INTERVAL_MS`, or `SELF_PING_INITIAL_DELAY_MS` only when you need different values. Render free instances can still suspend after inactivity; use an external monitor or a paid instance when continuous availability is required.
+
 ## Endpoints
 
 - `GET /api/questions?group=STUDENT` returns the seeded question catalog for a group.
