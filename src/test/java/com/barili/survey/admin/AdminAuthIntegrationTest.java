@@ -3,6 +3,7 @@ package com.barili.survey.admin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -92,6 +93,18 @@ class AdminAuthIntegrationTest {
         mockMvc.perform(get("/api/admin/responses")
                         .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/admin/responses")
+                        .param("userGroup", "STUDENT")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        mockMvc.perform(get("/api/admin/responses")
+                        .param("userGroup", "LGU_PERSONNEL")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

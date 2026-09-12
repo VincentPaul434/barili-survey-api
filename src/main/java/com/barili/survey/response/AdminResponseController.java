@@ -1,6 +1,7 @@
 package com.barili.survey.response;
 
 import com.barili.survey.admin.AdminSessionService;
+import com.barili.survey.question.UserGroup;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,11 +31,12 @@ public class AdminResponseController {
     public AdminResponsePage list(
             @CookieValue(value = SESSION_COOKIE, required = false) String sessionToken,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) UserGroup userGroup) {
         sessionService.requireValid(sessionToken);
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
-        return responseService.list(PageRequest.of(safePage, safeSize));
+        return responseService.list(PageRequest.of(safePage, safeSize), userGroup);
     }
 
     @GetMapping("/analytics")

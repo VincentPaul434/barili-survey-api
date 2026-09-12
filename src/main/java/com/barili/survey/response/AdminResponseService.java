@@ -33,10 +33,12 @@ public class AdminResponseService {
         this.objectMapper = objectMapper;
     }
 
-    @Cacheable(cacheNames = "adminResponses", key = "#pageable.pageNumber + ':' + #pageable.pageSize")
+    @Cacheable(cacheNames = "adminResponses", key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + (#userGroup == null ? 'ALL' : #userGroup.name())")
     @Transactional(readOnly = true)
-    public AdminResponsePage list(Pageable pageable) {
-        var page = responseRepository.findAllByOrderBySubmittedAtDesc(pageable);
+    public AdminResponsePage list(Pageable pageable, UserGroup userGroup) {
+        var page = userGroup == null
+                ? responseRepository.findAllByOrderBySubmittedAtDesc(pageable)
+                : responseRepository.findByUserGroupOrderBySubmittedAtDesc(userGroup, pageable);
         var summaries = page.getContent().stream()
                 .map(response -> new AdminSurveyResponseSummary(
                         response.getId(),
