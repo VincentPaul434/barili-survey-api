@@ -1,6 +1,7 @@
 package com.barili.survey.response;
 
 import com.barili.survey.question.UserGroup;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,7 @@ public record SurveySubmission(
         @NotBlank String linkToken,
         @NotNull UserGroup userGroup,
         @NotBlank String locale,
+        @NotNull @AssertTrue(message = "Participation consent is required") Boolean consentGiven,
         @NotNull @Size(min = 1) Map<String, Object> answers,
         Map<String, String> otherAnswers
 ) {

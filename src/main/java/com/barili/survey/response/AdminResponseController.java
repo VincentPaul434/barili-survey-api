@@ -37,6 +37,15 @@ public class AdminResponseController {
         return responseService.list(PageRequest.of(safePage, safeSize));
     }
 
+    @GetMapping("/analytics")
+    @Transactional(readOnly = true)
+    public AdminSurveyAnalytics analytics(
+            @CookieValue(value = SESSION_COOKIE, required = false) String sessionToken,
+            @RequestParam(required = false) com.barili.survey.question.UserGroup userGroup) {
+        sessionService.requireValid(sessionToken);
+        return responseService.analytics(userGroup);
+    }
+
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
     public AdminSurveyResponse details(

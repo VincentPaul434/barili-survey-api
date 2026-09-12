@@ -43,7 +43,7 @@ public class SurveyResponseController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
-    @CacheEvict(cacheNames = "adminResponses", allEntries = true)
+    @CacheEvict(cacheNames = {"adminResponses", "adminAnalytics"}, allEntries = true)
     public SurveySubmissionResult submit(@Valid @RequestBody SurveySubmission submission) {
         var link = surveyLinkService.requireAvailable(submission.linkToken());
         if (link.getUserGroup() != submission.userGroup()) {

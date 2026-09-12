@@ -74,6 +74,7 @@ class AdminAuthIntegrationTest {
 
         String submission = "{\"linkToken\":\"" + token
                 + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
+                + "\"consentGiven\":true,"
                 + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
                 + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
                 + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
