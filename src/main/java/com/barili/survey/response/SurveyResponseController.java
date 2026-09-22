@@ -25,6 +25,8 @@ import org.springframework.cache.annotation.CacheEvict;
 @RestController
 @RequestMapping("/api/surveys")
 public class SurveyResponseController {
+    private static final Set<String> BARANGAY_QUESTION_CODES = Set.of("A13", "B13", "C13", "D13");
+
     private final SurveyResponseRepository responseRepository;
     private final QuestionRepository questionRepository;
     private final ObjectMapper objectMapper;
@@ -122,7 +124,7 @@ public class SurveyResponseController {
                 }
                 selected.add(option);
             } else {
-                int maxLength = question.getCode().equals("B13") ? 100 : 4000;
+                int maxLength = BARANGAY_QUESTION_CODES.contains(question.getCode()) ? 100 : 4000;
                 if (!(value instanceof String text) || text.isBlank() || text.length() > maxLength) {
                     if (question.isRequired() || value != null) throw badRequest("Invalid answer for " + question.getCode());
                 }

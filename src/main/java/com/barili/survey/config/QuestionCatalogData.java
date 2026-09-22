@@ -61,8 +61,7 @@ public class QuestionCatalogData {
                             addOptions(question);
                             repository.save(question);
                         });
-                repository.findByCode("B13").orElseGet(() -> repository.save(
-                        question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true)));
+                ensureBarangayQuestions(repository);
                 return;
             }
             repository.saveAll(List.of(
@@ -78,6 +77,7 @@ public class QuestionCatalogData {
                     question("A10", 10, UserGroup.STUDENT, QuestionType.TEXT, "question.A10"),
                     question("A11", 11, UserGroup.STUDENT, QuestionType.TEXT, "question.A11"),
                     question("A12", 12, UserGroup.STUDENT, QuestionType.TEXT, "question.A12"),
+                    question("A13", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A13", true),
                     question("B1", 1, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B1"),
                     question("B2", 2, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B2"),
                     question("B3", 3, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B3"),
@@ -103,6 +103,7 @@ public class QuestionCatalogData {
                     question("C10", 10, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C10"),
                     question("C11", 11, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C11"),
                     question("C12", 12, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C12"),
+                    question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C13", true),
                     question("D1", 1, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D1"),
                     question("D2", 2, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D2"),
                     question("D3", 3, UserGroup.LGU_PERSONNEL, QuestionType.MULTI, "question.D3"),
@@ -113,9 +114,23 @@ public class QuestionCatalogData {
                     question("D9", 9, UserGroup.LGU_PERSONNEL, QuestionType.MULTI, "question.D9"),
                     question("D10", 10, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D10"),
                     question("D11", 11, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D11"),
-                    question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12")
+                    question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12"),
+                    question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D13", true)
             ));
         };
+    }
+
+    private static void ensureBarangayQuestions(QuestionRepository repository) {
+        List<Question> barangayQuestions = List.of(
+                question("A13", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A13", true),
+                question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true),
+                question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C13", true),
+                question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D13", true));
+        for (Question question : barangayQuestions) {
+            if (repository.findByCode(question.getCode()).isEmpty()) {
+                repository.save(question);
+            }
+        }
     }
 
     private static Question question(String code, int number, UserGroup group,
