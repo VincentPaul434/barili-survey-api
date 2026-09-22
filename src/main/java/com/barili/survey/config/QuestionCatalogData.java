@@ -18,7 +18,7 @@ public class QuestionCatalogData {
             "barangay_candugay", "barangay_dakit", "barangay_guibuangan", "barangay_gunting",
             "barangay_japitan", "barangay_kalubihan", "barangay_maghanoy", "barangay_maigang",
             "barangay_mantalongon", "barangay_nasipit", "barangay_patupat", "barangay_polacion",
-            "barangay_san_rafael", "barangay_santa_ana", "barangay_sayaw");
+            "barangay_san_rafael", "barangay_santa_ana", "barangay_sayaw", "other");
 
     private static final Map<String, List<String>> OPTIONS = Map.ofEntries(
             Map.entry("A1", List.of("below_12", "12_14", "15_17", "18_or_older", "prefer_not")),
@@ -144,6 +144,13 @@ public class QuestionCatalogData {
             } else {
                 existing.updateTypeAndRequired(QuestionType.SINGLE, true);
                 if (existing.getOptions().isEmpty()) addOptions(existing);
+                else if (existing.getOptions().stream().noneMatch(option -> option.getOptionKey().equals("other"))) {
+                    int displayOrder = existing.getOptions().stream()
+                            .mapToInt(QuestionOption::getDisplayOrder)
+                            .max()
+                            .orElse(0) + 1;
+                    existing.addOption(new QuestionOption("other", displayOrder, true));
+                }
                 repository.save(existing);
             }
         }
