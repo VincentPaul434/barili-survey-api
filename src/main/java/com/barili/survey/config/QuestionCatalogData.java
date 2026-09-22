@@ -61,6 +61,8 @@ public class QuestionCatalogData {
                             addOptions(question);
                             repository.save(question);
                         });
+                repository.findByCode("B13").orElseGet(() -> repository.save(
+                        question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true)));
                 return;
             }
             repository.saveAll(List.of(
@@ -88,6 +90,7 @@ public class QuestionCatalogData {
                     question("B10", 10, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B10"),
                     question("B11", 11, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B11"),
                     question("B12", 12, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B12"),
+                    question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true),
                     question("C1", 1, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C1"),
                     question("C2", 2, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C2"),
                     question("C3", 3, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C3"),
@@ -117,7 +120,12 @@ public class QuestionCatalogData {
 
     private static Question question(String code, int number, UserGroup group,
                                      QuestionType type, String promptKey) {
-        Question question = new Question(code, number, group, type, promptKey, type != QuestionType.TEXT);
+        return question(code, number, group, type, promptKey, type != QuestionType.TEXT);
+    }
+
+    private static Question question(String code, int number, UserGroup group,
+                                     QuestionType type, String promptKey, boolean required) {
+        Question question = new Question(code, number, group, type, promptKey, required);
         addOptions(question);
         return question;
     }

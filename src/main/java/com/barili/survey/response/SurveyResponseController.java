@@ -122,7 +122,8 @@ public class SurveyResponseController {
                 }
                 selected.add(option);
             } else {
-                if (!(value instanceof String text) || text.isBlank() || text.length() > 4000) {
+                int maxLength = question.getCode().equals("B13") ? 100 : 4000;
+                if (!(value instanceof String text) || text.isBlank() || text.length() > maxLength) {
                     if (question.isRequired() || value != null) throw badRequest("Invalid answer for " + question.getCode());
                 }
             }
