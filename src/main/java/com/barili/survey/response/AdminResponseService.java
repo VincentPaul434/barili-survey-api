@@ -88,8 +88,13 @@ public class AdminResponseService {
                 if (answer.getQuestion().getType() == QuestionType.TEXT) {
                     continue;
                 }
+                var options = answer.getQuestion().getOptions();
+                List<String> selected = selectedOptions(answer.getDisplayValue()).stream()
+                        .filter(optionKey -> options.stream().anyMatch(option -> optionKey.equals(option.getOptionKey())))
+                        .toList();
+                if (selected.isEmpty()) continue;
                 answeredCounts.merge(answer.getQuestion().getCode(), 1L, Long::sum);
-                for (String optionKey : selectedOptions(answer.getDisplayValue())) {
+                for (String optionKey : selected) {
                     choices.merge(answer.getQuestion().getCode() + "::" + optionKey, 1L, Long::sum);
                 }
             }

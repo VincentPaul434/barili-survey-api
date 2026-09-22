@@ -13,6 +13,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class QuestionCatalogData {
+    private static final List<String> BARANGAY_OPTIONS = List.of(
+            "barangay_azucena", "barangay_bolocboloc", "barangay_cagay", "barangay_campangga",
+            "barangay_candugay", "barangay_dakit", "barangay_guibuangan", "barangay_gunting",
+            "barangay_japitan", "barangay_kalubihan", "barangay_maghanoy", "barangay_maigang",
+            "barangay_mantalongon", "barangay_nasipit", "barangay_patupat", "barangay_polacion",
+            "barangay_san_rafael", "barangay_santa_ana", "barangay_sayaw");
+
     private static final Map<String, List<String>> OPTIONS = Map.ofEntries(
             Map.entry("A1", List.of("below_12", "12_14", "15_17", "18_or_older", "prefer_not")),
             Map.entry("A2", List.of("female", "male", "self_describe", "prefer_not")),
@@ -23,6 +30,7 @@ public class QuestionCatalogData {
             Map.entry("A7", List.of("individual_study", "group_study", "research", "reading", "digital_research", "printing", "workshops", "other")),
             Map.entry("A8", List.of("quiet_reading", "group_study_room", "computer_internet", "digital_learning", "history_area", "multimedia", "flexible_room", "coworking", "performance", "student_exhibit", "creative_project", "other")),
             Map.entry("A9", List.of("interactive_screens", "virtual_tours", "local_skill_demo", "traditional_crafts", "recorded_stories", "makerspace", "exhibits_events", "other")),
+            Map.entry("A13", BARANGAY_OPTIONS),
             Map.entry("B1", List.of("below_18", "18_24", "25_34", "35_44", "45_54", "55_64", "65_or_older", "prefer_not")),
             Map.entry("B2", List.of("female", "male", "prefer_not", "self_describe")),
             Map.entry("B3", List.of("student", "government_employee", "private_employee", "business_owner", "farmer_fisher", "product_maker", "tourism_worker", "homemaker", "retired", "other")),
@@ -32,6 +40,7 @@ public class QuestionCatalogData {
             Map.entry("B7", List.of("visitor_welcome", "public_library", "interactive_museum", "local_food_products", "cooking_farming_crafts", "community_events", "cultural_shows", "outdoor_garden", "accessible_toilets", "other")),
             Map.entry("B8", List.of("solar_charging", "local_plant_garden", "promote_local_business", "livelihood_training", "flexible_room", "comfortable_inclusive_area", "tourism_maps_guides", "shaded_rest_area", "digital_museum", "other")),
             Map.entry("B9", List.of("tour_guide", "cooking_farming_crafts", "sell_local_products", "cultural_event_space", "weekend_market", "meeting_event_space", "tour_booking", "shared_group_space", "other")),
+            Map.entry("B13", BARANGAY_OPTIONS),
             Map.entry("C1", List.of("18_24", "25_34", "35_44", "45_59", "60_or_older", "prefer_not")),
             Map.entry("C2", List.of("female", "male", "prefer_not")),
             Map.entry("C3", List.of("barili", "another_cebu_town", "outside_cebu", "outside_philippines", "prefer_not")),
@@ -41,6 +50,7 @@ public class QuestionCatalogData {
             Map.entry("C7", List.of("visitor_welcome", "interactive_museum", "library_reading", "digital_maps", "local_food_products", "cooking_crafts", "cultural_shows", "outdoor_garden", "accessible_toilets", "other")),
             Map.entry("C8", List.of("cultural_garden", "video_360", "story_booth", "old_new_projection", "product_workshop", "food_learning", "tour_planning", "community_exhibit", "other")),
             Map.entry("C9", List.of("tour_guide", "food_product_stalls", "craft_workshops", "cultural_shows", "weekend_markets", "tour_booking", "event_rental", "food_demonstrations", "other")),
+            Map.entry("C13", BARANGAY_OPTIONS),
             Map.entry("D1", List.of("planning", "engineering", "tourism_center", "municipal_library", "culture_heritage", "mayors_office", "other")),
             Map.entry("D2", List.of("less_than_year", "1_5_years", "6_10_years", "more_than_10", "prefer_not")),
             Map.entry("D3", List.of("spaces_small", "hard_to_find", "not_enough_public_space", "not_enough_staff_space", "not_enough_storage", "not_enough_toilets", "not_accessible", "services_not_connected", "other")),
@@ -48,7 +58,8 @@ public class QuestionCatalogData {
             Map.entry("D6", List.of("easier_to_find", "one_clear_place", "culture_learning_tourism", "better_program_rooms", "promote_history_products", "service_coordination", "other")),
             Map.entry("D7", List.of("spaces_small", "crowded_activities", "hard_to_find", "not_enough_public_programs", "not_enough_staff_space", "not_enough_storage", "better_information", "promote_history_culture", "connect_services", "other")),
             Map.entry("D8", List.of("reading_library", "history_display", "tourism_information", "waiting_rest", "meeting_training", "staff_work", "records_storage", "public_programs", "comfort_room", "signs_directions", "other")),
-            Map.entry("D9", List.of("meeting_room", "event_space", "product_stalls", "craft_shop", "cafe_food", "paid_workshops", "tour_booking", "exhibit_area", "other"))
+            Map.entry("D9", List.of("meeting_room", "event_space", "product_stalls", "craft_shop", "cafe_food", "paid_workshops", "tour_booking", "exhibit_area", "other")),
+            Map.entry("D13", BARANGAY_OPTIONS)
     );
 
     @Bean
@@ -77,7 +88,7 @@ public class QuestionCatalogData {
                     question("A10", 10, UserGroup.STUDENT, QuestionType.TEXT, "question.A10"),
                     question("A11", 11, UserGroup.STUDENT, QuestionType.TEXT, "question.A11"),
                     question("A12", 12, UserGroup.STUDENT, QuestionType.TEXT, "question.A12"),
-                    question("A13", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A13", true),
+                    question("A13", 13, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
                     question("B1", 1, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B1"),
                     question("B2", 2, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B2"),
                     question("B3", 3, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B3"),
@@ -90,7 +101,7 @@ public class QuestionCatalogData {
                     question("B10", 10, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B10"),
                     question("B11", 11, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B11"),
                     question("B12", 12, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B12"),
-                    question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true),
+                    question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true),
                     question("C1", 1, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C1"),
                     question("C2", 2, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C2"),
                     question("C3", 3, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C3"),
@@ -103,7 +114,7 @@ public class QuestionCatalogData {
                     question("C10", 10, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C10"),
                     question("C11", 11, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C11"),
                     question("C12", 12, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C12"),
-                    question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C13", true),
+                    question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C13", true),
                     question("D1", 1, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D1"),
                     question("D2", 2, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D2"),
                     question("D3", 3, UserGroup.LGU_PERSONNEL, QuestionType.MULTI, "question.D3"),
@@ -115,20 +126,25 @@ public class QuestionCatalogData {
                     question("D10", 10, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D10"),
                     question("D11", 11, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D11"),
                     question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12"),
-                    question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D13", true)
+                    question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D13", true)
             ));
         };
     }
 
     private static void ensureBarangayQuestions(QuestionRepository repository) {
         List<Question> barangayQuestions = List.of(
-                question("A13", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A13", true),
-                question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B13", true),
-                question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C13", true),
-                question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D13", true));
+                question("A13", 13, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
+                question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true),
+                question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C13", true),
+                question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D13", true));
         for (Question question : barangayQuestions) {
-            if (repository.findByCode(question.getCode()).isEmpty()) {
+            Question existing = repository.findByCode(question.getCode()).orElse(null);
+            if (existing == null) {
                 repository.save(question);
+            } else {
+                existing.updateTypeAndRequired(QuestionType.SINGLE, true);
+                if (existing.getOptions().isEmpty()) addOptions(existing);
+                repository.save(existing);
             }
         }
     }

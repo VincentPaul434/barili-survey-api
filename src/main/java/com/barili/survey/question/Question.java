@@ -53,6 +53,11 @@ public class Question {
         option.setQuestion(this);
     }
 
+    public void updateTypeAndRequired(QuestionType type, boolean required) {
+        this.type = type;
+        this.required = required;
+    }
+
     public Long getId() { return id; }
     public String getCode() { return code; }
     public int getDisplayNumber() { return displayNumber; }
