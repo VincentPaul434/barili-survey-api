@@ -39,7 +39,6 @@ public class QuestionCatalogData {
             Map.entry("A8", List.of("quiet_reading", "group_study_room", "computer_internet", "digital_learning", "history_area", "multimedia", "flexible_room", "coworking", "performance", "student_exhibit", "creative_project", "other")),
             Map.entry("A9", List.of("interactive_screens", "virtual_tours", "local_skill_demo", "traditional_crafts", "recorded_stories", "makerspace", "exhibits_events", "other")),
             Map.entry("A14", SCHOOL_OPTIONS),
-            Map.entry("A13", BARANGAY_OPTIONS),
             Map.entry("B1", List.of("below_18", "18_24", "25_34", "35_44", "45_54", "55_64", "65_or_older", "prefer_not")),
             Map.entry("B2", List.of("female", "male", "prefer_not", "self_describe")),
             Map.entry("B3", List.of("student", "government_employee", "private_employee", "business_owner", "farmer_fisher", "product_maker", "tourism_worker", "homemaker", "retired", "other")),
@@ -59,7 +58,6 @@ public class QuestionCatalogData {
             Map.entry("C7", List.of("visitor_welcome", "interactive_museum", "library_reading", "digital_maps", "local_food_products", "cooking_crafts", "cultural_shows", "outdoor_garden", "accessible_toilets", "other")),
             Map.entry("C8", List.of("cultural_garden", "video_360", "story_booth", "old_new_projection", "product_workshop", "food_learning", "tour_planning", "community_exhibit", "other")),
             Map.entry("C9", List.of("tour_guide", "food_product_stalls", "craft_workshops", "cultural_shows", "weekend_markets", "tour_booking", "event_rental", "food_demonstrations", "other")),
-            Map.entry("C13", BARANGAY_OPTIONS),
             Map.entry("D1", List.of("planning", "engineering", "tourism_center", "municipal_library", "culture_heritage", "mayors_office", "other")),
             Map.entry("D2", List.of("less_than_year", "1_5_years", "6_10_years", "more_than_10", "prefer_not")),
             Map.entry("D3", List.of("spaces_small", "hard_to_find", "not_enough_public_space", "not_enough_staff_space", "not_enough_storage", "not_enough_toilets", "not_accessible", "services_not_connected", "other")),
@@ -67,8 +65,7 @@ public class QuestionCatalogData {
             Map.entry("D6", List.of("easier_to_find", "one_clear_place", "culture_learning_tourism", "better_program_rooms", "promote_history_products", "service_coordination", "other")),
             Map.entry("D7", List.of("spaces_small", "crowded_activities", "hard_to_find", "not_enough_public_programs", "not_enough_staff_space", "not_enough_storage", "better_information", "promote_history_culture", "connect_services", "other")),
             Map.entry("D8", List.of("reading_library", "history_display", "tourism_information", "waiting_rest", "meeting_training", "staff_work", "records_storage", "public_programs", "comfort_room", "signs_directions", "other")),
-            Map.entry("D9", List.of("meeting_room", "event_space", "product_stalls", "craft_shop", "cafe_food", "paid_workshops", "tour_booking", "exhibit_area", "other")),
-            Map.entry("D13", BARANGAY_OPTIONS)
+            Map.entry("D9", List.of("meeting_room", "event_space", "product_stalls", "craft_shop", "cafe_food", "paid_workshops", "tour_booking", "exhibit_area", "other"))
     );
 
     @Bean
@@ -76,9 +73,9 @@ public class QuestionCatalogData {
         return args -> {
             if (repository.count() > 0) {
                 repository.findAll().stream()
-                        .filter(question -> question.getOptions().isEmpty())
                         .forEach(question -> {
-                            addOptions(question);
+                            question.activate();
+                            if (question.getOptions().isEmpty()) addOptions(question);
                             repository.save(question);
                         });
                 ensureBarangayQuestions(repository);
@@ -99,7 +96,6 @@ public class QuestionCatalogData {
                     question("A10", 11, UserGroup.STUDENT, QuestionType.TEXT, "question.A10"),
                     question("A11", 12, UserGroup.STUDENT, QuestionType.TEXT, "question.A11"),
                     question("A12", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A12"),
-                    question("A13", 14, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
                     question("B1", 1, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B1"),
                     question("B2", 2, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B2"),
                     question("B3", 3, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B3"),
@@ -125,7 +121,6 @@ public class QuestionCatalogData {
                     question("C10", 10, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C10"),
                     question("C11", 11, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C11"),
                     question("C12", 12, UserGroup.TOURIST_VISITOR, QuestionType.TEXT, "question.C12"),
-                    question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C13", true),
                     question("D1", 1, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D1"),
                     question("D2", 2, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D2"),
                     question("D3", 3, UserGroup.LGU_PERSONNEL, QuestionType.MULTI, "question.D3"),
@@ -136,23 +131,20 @@ public class QuestionCatalogData {
                     question("D9", 9, UserGroup.LGU_PERSONNEL, QuestionType.MULTI, "question.D9"),
                     question("D10", 10, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D10"),
                     question("D11", 11, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D11"),
-                    question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12"),
-                    question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D13", true)
+                    question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12")
             ));
         };
     }
 
     private static void ensureBarangayQuestions(QuestionRepository repository) {
         List<Question> barangayQuestions = List.of(
-                question("A13", 13, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
-                question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true),
-                question("C13", 13, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C13", true),
-                question("D13", 13, UserGroup.LGU_PERSONNEL, QuestionType.SINGLE, "question.D13", true));
+                question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true));
         for (Question question : barangayQuestions) {
             Question existing = repository.findByCode(question.getCode()).orElse(null);
             if (existing == null) {
                 repository.save(question);
             } else {
+                existing.activate();
                 existing.updateTypeAndRequired(QuestionType.SINGLE, true);
                 if (existing.getOptions().isEmpty()) addOptions(existing);
                 else if (existing.getOptions().stream().noneMatch(option -> option.getOptionKey().equals("other"))) {
@@ -164,6 +156,13 @@ public class QuestionCatalogData {
                 }
                 repository.save(existing);
             }
+        }
+
+        for (String retiredCode : List.of("A13", "C13", "D13")) {
+            repository.findByCode(retiredCode).ifPresent(question -> {
+                question.deactivate();
+                repository.save(question);
+            });
         }
     }
 
@@ -189,7 +188,7 @@ public class QuestionCatalogData {
         }
 
         List<String> studentQuestionOrder = List.of(
-                "A1", "A2", "A3", "A14", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13");
+                "A1", "A2", "A3", "A14", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12");
         for (int index = 0; index < studentQuestionOrder.size(); index++) {
             int displayNumber = index + 1;
             repository.findByCode(studentQuestionOrder.get(index)).ifPresent(question -> {

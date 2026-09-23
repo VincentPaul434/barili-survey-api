@@ -114,7 +114,7 @@ public class AdminResponseService {
                 .limit(8)
                 .toList();
 
-        List<AdminQuestionAnalytics> questionAnalytics = questionRepository.findAll().stream()
+        List<AdminQuestionAnalytics> questionAnalytics = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
                 .filter(question -> question.getType() != QuestionType.TEXT)
                 .filter(question -> userGroup == null || question.getUserGroup() == userGroup)
                 .sorted(Comparator.comparing(Question::getUserGroup)

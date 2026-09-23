@@ -18,7 +18,7 @@ public class QuestionController {
     @GetMapping
     public List<Question> list(@RequestParam(required = false) UserGroup group) {
         return group == null
-                ? questionRepository.findAll()
-                : questionRepository.findAllByUserGroupOrderByDisplayNumber(group);
+                ? questionRepository.findAllByActiveTrueOrderByDisplayNumber()
+                : questionRepository.findAllByUserGroupAndActiveTrueOrderByDisplayNumber(group);
     }
 }

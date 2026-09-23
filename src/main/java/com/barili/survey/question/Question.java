@@ -32,6 +32,7 @@ public class Question {
 
     private String promptKey;
     private boolean required;
+    private boolean active = true;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<QuestionOption> options = new ArrayList<>();
@@ -62,6 +63,9 @@ public class Question {
         this.displayNumber = displayNumber;
     }
 
+    public void activate() { this.active = true; }
+    public void deactivate() { this.active = false; }
+
     public Long getId() { return id; }
     public String getCode() { return code; }
     public int getDisplayNumber() { return displayNumber; }
@@ -69,5 +73,6 @@ public class Question {
     public QuestionType getType() { return type; }
     public String getPromptKey() { return promptKey; }
     public boolean isRequired() { return required; }
+    public boolean isActive() { return active; }
     public List<QuestionOption> getOptions() { return options; }
 }

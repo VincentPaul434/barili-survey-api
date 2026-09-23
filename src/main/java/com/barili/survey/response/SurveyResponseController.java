@@ -55,7 +55,7 @@ public class SurveyResponseController {
         }
 
         List<Question> questions = questionRepository
-                .findAllByUserGroupOrderByDisplayNumber(submission.userGroup());
+                .findAllByUserGroupAndActiveTrueOrderByDisplayNumber(submission.userGroup());
         validateAnswers(submission, questions);
         surveyLinkService.consume(submission.linkToken(), submission.userGroup());
 
@@ -63,7 +63,7 @@ public class SurveyResponseController {
         Map<String, Object> answers = submission.answers();
 
         for (Map.Entry<String, Object> entry : answers.entrySet()) {
-            Question question = questionRepository.findByCode(entry.getKey()).orElseThrow(() -> badRequest(
+            Question question = questionRepository.findByCodeAndActiveTrue(entry.getKey()).orElseThrow(() -> badRequest(
                     "Unknown question code: " + entry.getKey()));
             Object value = entry.getValue();
             String single = null;
