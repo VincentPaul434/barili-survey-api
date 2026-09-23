@@ -58,6 +58,10 @@ public class Question {
         this.required = required;
     }
 
+    public void updateDisplayNumber(int displayNumber) {
+        this.displayNumber = displayNumber;
+    }
+
     public Long getId() { return id; }
     public String getCode() { return code; }
     public int getDisplayNumber() { return displayNumber; }

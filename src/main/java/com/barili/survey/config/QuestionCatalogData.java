@@ -5,8 +5,10 @@ import com.barili.survey.question.QuestionRepository;
 import com.barili.survey.question.QuestionOption;
 import com.barili.survey.question.QuestionType;
 import com.barili.survey.question.UserGroup;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +22,12 @@ public class QuestionCatalogData {
             "barangay_mantalongon", "barangay_nasipit", "barangay_patupat", "barangay_polacion",
             "barangay_san_rafael", "barangay_santa_ana", "barangay_sayaw", "other");
 
+    private static final List<String> SCHOOL_OPTIONS = List.of(
+            "school_ctu_barili", "school_lyceum_cebu", "school_mantalongon_nhs", "school_patupat_nhs",
+            "school_cagay_nhs", "school_bartolome_manuela_panares_nhs", "school_shelomith_learning_center",
+            "school_sta_ana_academy", "school_barili_central", "school_academia_santa_ana_san_joaquin",
+            "school_dakit_elementary", "school_mantalongon_elementary", "school_gunting_elementary");
+
     private static final Map<String, List<String>> OPTIONS = Map.ofEntries(
             Map.entry("A1", List.of("below_12", "12_14", "15_17", "18_or_older", "prefer_not")),
             Map.entry("A2", List.of("female", "male", "self_describe", "prefer_not")),
@@ -30,6 +38,7 @@ public class QuestionCatalogData {
             Map.entry("A7", List.of("individual_study", "group_study", "research", "reading", "digital_research", "printing", "workshops", "other")),
             Map.entry("A8", List.of("quiet_reading", "group_study_room", "computer_internet", "digital_learning", "history_area", "multimedia", "flexible_room", "coworking", "performance", "student_exhibit", "creative_project", "other")),
             Map.entry("A9", List.of("interactive_screens", "virtual_tours", "local_skill_demo", "traditional_crafts", "recorded_stories", "makerspace", "exhibits_events", "other")),
+            Map.entry("A14", SCHOOL_OPTIONS),
             Map.entry("A13", BARANGAY_OPTIONS),
             Map.entry("B1", List.of("below_18", "18_24", "25_34", "35_44", "45_54", "55_64", "65_or_older", "prefer_not")),
             Map.entry("B2", List.of("female", "male", "prefer_not", "self_describe")),
@@ -73,22 +82,24 @@ public class QuestionCatalogData {
                             repository.save(question);
                         });
                 ensureBarangayQuestions(repository);
+                ensureStudentSchoolQuestion(repository);
                 return;
             }
             repository.saveAll(List.of(
                     question("A1", 1, UserGroup.STUDENT, QuestionType.SINGLE, "question.A1"),
                     question("A2", 2, UserGroup.STUDENT, QuestionType.SINGLE, "question.A2"),
                     question("A3", 3, UserGroup.STUDENT, QuestionType.SINGLE, "question.A3"),
-                    question("A4", 4, UserGroup.STUDENT, QuestionType.SINGLE, "question.A4"),
-                    question("A5", 5, UserGroup.STUDENT, QuestionType.MULTI, "question.A5"),
-                    question("A6", 6, UserGroup.STUDENT, QuestionType.SINGLE, "question.A6"),
-                    question("A7", 7, UserGroup.STUDENT, QuestionType.MULTI, "question.A7"),
-                    question("A8", 8, UserGroup.STUDENT, QuestionType.MULTI, "question.A8"),
-                    question("A9", 9, UserGroup.STUDENT, QuestionType.MULTI, "question.A9"),
-                    question("A10", 10, UserGroup.STUDENT, QuestionType.TEXT, "question.A10"),
-                    question("A11", 11, UserGroup.STUDENT, QuestionType.TEXT, "question.A11"),
-                    question("A12", 12, UserGroup.STUDENT, QuestionType.TEXT, "question.A12"),
-                    question("A13", 13, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
+                    question("A14", 4, UserGroup.STUDENT, QuestionType.SINGLE, "question.A14", true),
+                    question("A4", 5, UserGroup.STUDENT, QuestionType.SINGLE, "question.A4"),
+                    question("A5", 6, UserGroup.STUDENT, QuestionType.MULTI, "question.A5"),
+                    question("A6", 7, UserGroup.STUDENT, QuestionType.SINGLE, "question.A6"),
+                    question("A7", 8, UserGroup.STUDENT, QuestionType.MULTI, "question.A7"),
+                    question("A8", 9, UserGroup.STUDENT, QuestionType.MULTI, "question.A8"),
+                    question("A9", 10, UserGroup.STUDENT, QuestionType.MULTI, "question.A9"),
+                    question("A10", 11, UserGroup.STUDENT, QuestionType.TEXT, "question.A10"),
+                    question("A11", 12, UserGroup.STUDENT, QuestionType.TEXT, "question.A11"),
+                    question("A12", 13, UserGroup.STUDENT, QuestionType.TEXT, "question.A12"),
+                    question("A13", 14, UserGroup.STUDENT, QuestionType.SINGLE, "question.A13", true),
                     question("B1", 1, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B1"),
                     question("B2", 2, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B2"),
                     question("B3", 3, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B3"),
@@ -153,6 +164,38 @@ public class QuestionCatalogData {
                 }
                 repository.save(existing);
             }
+        }
+    }
+
+    private static void ensureStudentSchoolQuestion(QuestionRepository repository) {
+        Question schoolQuestion = repository.findByCode("A14").orElse(null);
+        if (schoolQuestion == null) {
+            repository.save(question("A14", 4, UserGroup.STUDENT, QuestionType.SINGLE, "question.A14", true));
+        } else {
+            schoolQuestion.updateTypeAndRequired(QuestionType.SINGLE, true);
+            Set<String> optionKeys = new HashSet<>(schoolQuestion.getOptions().stream()
+                    .map(QuestionOption::getOptionKey)
+                    .toList());
+            int displayOrder = schoolQuestion.getOptions().stream()
+                    .mapToInt(QuestionOption::getDisplayOrder)
+                    .max()
+                    .orElse(0) + 1;
+            for (String optionKey : SCHOOL_OPTIONS) {
+                if (optionKeys.add(optionKey)) {
+                    schoolQuestion.addOption(new QuestionOption(optionKey, displayOrder++, false));
+                }
+            }
+            repository.save(schoolQuestion);
+        }
+
+        List<String> studentQuestionOrder = List.of(
+                "A1", "A2", "A3", "A14", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13");
+        for (int index = 0; index < studentQuestionOrder.size(); index++) {
+            int displayNumber = index + 1;
+            repository.findByCode(studentQuestionOrder.get(index)).ifPresent(question -> {
+                question.updateDisplayNumber(displayNumber);
+                repository.save(question);
+            });
         }
     }
 
