@@ -10,9 +10,9 @@ mvn spring-boot:run
 
 The default profile uses a file-backed H2 database at `./data/barili-survey`. Set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DRIVER` for PostgreSQL or another JDBC database.
 
-Set `SURVEY_ADMIN_USERNAME` and `SURVEY_ADMIN_PASSWORD_HASH` to provision the initial admin account; the application has no built-in default credentials. Set `SPRING_PROFILES_ACTIVE=prod` for deployments, use PostgreSQL with `JPA_DDL_AUTO=validate`, set `SURVEY_ADMIN_COOKIE_SECURE=true`, and set `SURVEY_PUBLIC_BASE_URL` to the frontend origin used in generated respondent links. The admin logs in at `/admin/login`; the dashboard generates reusable public links for a selected audience and displays submitted responses. Respondents can use the reusable public route `/` or open an individual link at `/survey/{token}`.
+Set `SURVEY_ADMIN_USERNAME` and `SURVEY_ADMIN_PASSWORD_HASH` to provision the initial admin account; the application has no built-in default credentials. Set `SPRING_PROFILES_ACTIVE=prod` for deployments, use PostgreSQL with `JPA_DDL_AUTO=validate`, set `SURVEY_ADMIN_COOKIE_SECURE=true`, and set `SURVEY_PUBLIC_BASE_URL` to the frontend origin used in generated respondent links. The admin logs in at `/admin/login`; the dashboard can generate single-use, expiring links and view submitted responses. Respondents can use the reusable public route `/` or open an individual link at `/survey/{token}`.
 
-The public frontend route `/` is a reusable questionnaire chooser, and the audience-specific routes are public as well. Public submissions omit `linkToken`. The API can also generate protected, single-use links when individual tracking is needed.
+The public frontend route `/` is the reusable survey link. Respondents choose their questionnaire there, and public submissions omit `linkToken`. The admin dashboard can still generate protected, single-use links when individual tracking is needed.
 
 The service exposes `GET /api/health`. On Render, `RENDER_EXTERNAL_URL` is used automatically for a lightweight self-ping every 10 minutes while the process is running. Configure `SELF_PING_URL`, `SELF_PING_INTERVAL_MS`, or `SELF_PING_INITIAL_DELAY_MS` only when you need different values. Render free instances can still suspend after inactivity; use an external monitor or a paid instance when continuous availability is required.
 
