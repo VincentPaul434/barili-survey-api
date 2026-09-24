@@ -22,11 +22,11 @@ public class SurveyLinkService {
     }
 
     @Transactional
-    public SurveyLink create(UserGroup userGroup, Integer expiresInHours) {
+    public SurveyLink create(UserGroup userGroup, Integer expiresInHours, boolean reusable) {
         int expiryHours = expiresInHours == null ? DEFAULT_EXPIRY_HOURS : expiresInHours;
         String token = generateToken();
         return repository.save(new SurveyLink(token, userGroup,
-                Instant.now().plus(Duration.ofHours(expiryHours))));
+                Instant.now().plus(Duration.ofHours(expiryHours)), reusable));
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +50,7 @@ public class SurveyLinkService {
     }
 
     private void ensureAvailable(SurveyLink link) {
-        if (link.getConsumedAt() != null) {
+        if (!link.isReusable() && link.getConsumedAt() != null) {
             throw new ResponseStatusException(HttpStatus.GONE, "Survey link has already been used");
         }
         if (!link.getExpiresAt().isAfter(Instant.now())) {

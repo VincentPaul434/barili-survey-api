@@ -33,14 +33,22 @@ public class SurveyLink {
     @Column(nullable = false)
     private Instant expiresAt;
 
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean reusable;
+
     private Instant consumedAt;
 
     protected SurveyLink() {}
 
     public SurveyLink(String token, UserGroup userGroup, Instant expiresAt) {
+        this(token, userGroup, expiresAt, false);
+    }
+
+    public SurveyLink(String token, UserGroup userGroup, Instant expiresAt, boolean reusable) {
         this.token = token;
         this.userGroup = userGroup;
         this.expiresAt = expiresAt;
+        this.reusable = reusable;
     }
 
     @PrePersist
@@ -49,16 +57,17 @@ public class SurveyLink {
     }
 
     public boolean isAvailable(Instant now) {
-        return consumedAt == null && expiresAt.isAfter(now);
+        return (reusable || consumedAt == null) && expiresAt.isAfter(now);
     }
 
     public void consume(Instant now) {
-        consumedAt = now;
+        if (!reusable) consumedAt = now;
     }
 
     public String getToken() { return token; }
     public UserGroup getUserGroup() { return userGroup; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getExpiresAt() { return expiresAt; }
+    public boolean isReusable() { return reusable; }
     public Instant getConsumedAt() { return consumedAt; }
 }

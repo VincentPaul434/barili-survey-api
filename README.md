@@ -10,18 +10,16 @@ mvn spring-boot:run
 
 The default profile uses a file-backed H2 database at `./data/barili-survey`. Set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DRIVER` for PostgreSQL or another JDBC database.
 
-Set `SURVEY_ADMIN_USERNAME` and `SURVEY_ADMIN_PASSWORD_HASH` to provision the initial admin account; the application has no built-in default credentials. Set `SPRING_PROFILES_ACTIVE=prod` for deployments, use PostgreSQL with `JPA_DDL_AUTO=validate`, set `SURVEY_ADMIN_COOKIE_SECURE=true`, and set `SURVEY_PUBLIC_BASE_URL` to the frontend origin used in generated respondent links. The admin logs in at `/admin/login`; the dashboard can generate single-use, expiring links and view submitted responses. Respondents can use the reusable public route `/` or open an individual link at `/survey/{token}`.
-
-The public frontend route `/` is the reusable survey link. Respondents choose their questionnaire there, and public submissions omit `linkToken`. The admin dashboard can still generate protected, single-use links when individual tracking is needed.
+Set `SURVEY_ADMIN_USERNAME` and `SURVEY_ADMIN_PASSWORD_HASH` to provision the initial admin account; the application has no built-in default credentials. Set `SPRING_PROFILES_ACTIVE=prod` for deployments, use PostgreSQL with `JPA_DDL_AUTO=validate`, set `SURVEY_ADMIN_COOKIE_SECURE=true`, and set `SURVEY_PUBLIC_BASE_URL` to the frontend origin used in generated respondent links. The admin logs in at `/admin/login`; the dashboard generates expiring respondent links and views submitted responses. Links can be single-use or reusable public tokens, each bound to one questionnaire. Anyone with a reusable public token can submit multiple responses until it expires.
 
 The service exposes `GET /api/health`. On Render, `RENDER_EXTERNAL_URL` is used automatically for a lightweight self-ping every 10 minutes while the process is running. Configure `SELF_PING_URL`, `SELF_PING_INTERVAL_MS`, or `SELF_PING_INITIAL_DELAY_MS` only when you need different values. Render free instances can still suspend after inactivity; use an external monitor or a paid instance when continuous availability is required.
 
 ## Endpoints
 
 - `GET /api/questions?group=STUDENT` returns the seeded question catalog for a group.
-- `POST /api/surveys` stores a public or token-bound response and its typed answers.
+- `POST /api/surveys` stores a response when the request includes a valid survey link token. Single-use tokens are consumed after a successful submission; reusable tokens can submit repeatedly until expiration.
 - `POST /api/admin/login` starts the HttpOnly admin session.
-- `POST /api/admin/survey-links` generates a protected, single-use respondent link.
+- `POST /api/admin/survey-links` generates a protected respondent token; set `reusable` to `true` for a public token.
 - `GET /api/admin/responses?page=0&size=10` returns a cached page of response summaries. `size` is capped at 50.
 - `GET /api/admin/responses/{id}` returns the full answers for one response when an administrator opens its details.
 
@@ -32,6 +30,7 @@ Example payload:
   "linkToken": "opaque-token-from-the-respondent-link",
   "userGroup": "STUDENT",
   "locale": "ceb",
+  "consentGiven": true,
   "answers": {
     "A1": "15_17",
     "A5": ["school_library", "study_room"],

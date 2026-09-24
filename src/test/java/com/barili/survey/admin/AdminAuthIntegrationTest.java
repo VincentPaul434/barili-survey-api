@@ -86,7 +86,7 @@ class AdminAuthIntegrationTest {
         String submission = "{\"linkToken\":\"" + token
                 + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
                 + "\"consentGiven\":true,"
-                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
+                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\",\"A14\":\"school_ctu_barili\","
                 + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
                 + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
                 + "\"otherAnswers\":{}}";
@@ -140,7 +140,7 @@ class AdminAuthIntegrationTest {
     }
 
     @Test
-    void publicSurveyCanAcceptMultipleResponsesWithoutIndividualLinks() throws Exception {
+    void submissionWithoutSurveyLinkIsRejected() throws Exception {
         String submission = "{\"userGroup\":\"STUDENT\",\"locale\":\"en\","
                 + "\"consentGiven\":true,"
                 + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
@@ -151,12 +151,46 @@ class AdminAuthIntegrationTest {
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(submission))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void publicTokenIsReusableAndRemainsBoundToItsQuestionnaire() throws Exception {
+        String sessionCookie = login();
+        MvcResult linkResult = mockMvc.perform(post("/api/admin/survey-links")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userGroup\":\"STUDENT\",\"expiresInHours\":24,\"reusable\":true}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.reusable").value(true))
+                .andReturn();
+        String link = objectMapper.readTree(linkResult.getResponse().getContentAsString()).get("link").asText();
+        String token = link.substring(link.lastIndexOf("/survey/") + "/survey/".length());
+        String submission = "{\"linkToken\":\"" + token
+                + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
+                + "\"consentGiven\":true,"
+                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\",\"A14\":\"school_ctu_barili\","
+                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
+                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
+                + "\"otherAnswers\":{}}";
+
+        mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(submission.replace("\"userGroup\":\"STUDENT\"", "\"userGroup\":\"LGU_PERSONNEL\"")))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(submission))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(submission))
                 .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/survey-links/{token}", token))
+                .andExpect(status().isOk());
     }
 
     private String login() throws Exception {

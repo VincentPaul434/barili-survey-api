@@ -34,11 +34,12 @@ public class SurveyLinkController {
             @CookieValue(value = "admin_session", required = false) String sessionToken,
             @Valid @RequestBody CreateSurveyLinkRequest request) {
         sessionService.requireValid(sessionToken);
-        SurveyLink link = service.create(request.userGroup(), request.expiresInHours());
+        SurveyLink link = service.create(request.userGroup(), request.expiresInHours(), request.reusable());
         return new CreateSurveyLinkResponse(
                 trimTrailingSlash(publicBaseUrl) + "/survey/" + link.getToken(),
                 link.getUserGroup(),
-                link.getExpiresAt());
+                link.getExpiresAt(),
+                link.isReusable());
     }
 
     @GetMapping("/survey-links/{token}")
