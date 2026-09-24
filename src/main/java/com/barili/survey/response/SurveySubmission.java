@@ -9,13 +9,17 @@ import java.util.List;
 import java.util.Map;
 
 public record SurveySubmission(
-        @NotBlank String linkToken,
+        String linkToken,
         @NotNull UserGroup userGroup,
         @NotBlank String locale,
         @NotNull @AssertTrue(message = "Participation consent is required") Boolean consentGiven,
         @NotNull @Size(min = 1) Map<String, Object> answers,
         Map<String, String> otherAnswers
 ) {
+    public boolean hasLinkToken() {
+        return linkToken != null && !linkToken.isBlank();
+    }
+
     public Map<String, String> safeOtherAnswers() {
         return otherAnswers == null ? Map.of() : otherAnswers;
     }

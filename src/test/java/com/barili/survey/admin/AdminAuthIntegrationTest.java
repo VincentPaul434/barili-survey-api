@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
+import com.barili.survey.link.SurveyLinkRepository;
+import com.barili.survey.response.SurveyResponseRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +38,16 @@ class AdminAuthIntegrationTest {
     @Autowired
     private AdminAccountRepository adminAccountRepository;
 
+    @Autowired
+    private SurveyLinkRepository surveyLinkRepository;
+
+    @Autowired
+    private SurveyResponseRepository surveyResponseRepository;
+
     @BeforeEach
     void seedTestAdmin() {
+        surveyResponseRepository.deleteAll();
+        surveyLinkRepository.deleteAll();
         if (adminAccountRepository.findByUsernameIgnoreCase("test-admin").isEmpty()) {
             adminAccountRepository.save(new AdminAccount(
                     "test-admin",
@@ -127,6 +137,26 @@ class AdminAuthIntegrationTest {
 
         mockMvc.perform(get("/api/survey-links/{token}", token))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void publicSurveyCanAcceptMultipleResponsesWithoutIndividualLinks() throws Exception {
+        String submission = "{\"userGroup\":\"STUDENT\",\"locale\":\"en\","
+                + "\"consentGiven\":true,"
+                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
+                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
+                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
+                + "\"otherAnswers\":{}}";
+
+        mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(submission))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(submission))
+                .andExpect(status().isCreated());
     }
 
     private String login() throws Exception {

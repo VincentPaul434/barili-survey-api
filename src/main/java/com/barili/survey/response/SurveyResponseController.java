@@ -45,8 +45,8 @@ public class SurveyResponseController {
     @Transactional
     @CacheEvict(cacheNames = {"adminResponses", "adminAnalytics"}, allEntries = true)
     public SurveySubmissionResult submit(@Valid @RequestBody SurveySubmission submission) {
-        var link = surveyLinkService.requireAvailable(submission.linkToken());
-        if (link.getUserGroup() != submission.userGroup()) {
+        var link = submission.hasLinkToken() ? surveyLinkService.requireAvailable(submission.linkToken()) : null;
+        if (link != null && link.getUserGroup() != submission.userGroup()) {
             throw badRequest("Survey link is for a different questionnaire");
         }
 
@@ -57,7 +57,9 @@ public class SurveyResponseController {
         List<Question> questions = questionRepository
                 .findAllByUserGroupAndActiveTrueOrderByDisplayNumber(submission.userGroup());
         validateAnswers(submission, questions);
-        surveyLinkService.consume(submission.linkToken(), submission.userGroup());
+        if (link != null) {
+            surveyLinkService.consume(submission.linkToken(), submission.userGroup());
+        }
 
         SurveyResponse response = new SurveyResponse(submission.userGroup(), submission.locale());
         Map<String, Object> answers = submission.answers();
