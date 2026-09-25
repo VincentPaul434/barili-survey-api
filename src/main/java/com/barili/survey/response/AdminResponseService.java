@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +71,14 @@ public class AdminResponseService {
                                 answer.getDisplayValue(),
                                 answer.getOtherValue()))
                         .toList());
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = {"adminResponses", "adminAnalytics"}, allEntries = true)
+    public void delete(UUID id) {
+        var response = responseRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Response not found"));
+        responseRepository.delete(response);
     }
 
     @Cacheable(cacheNames = "adminAnalytics", key = "#userGroup == null ? 'ALL' : #userGroup.name()")
