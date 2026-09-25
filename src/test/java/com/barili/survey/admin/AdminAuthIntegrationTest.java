@@ -1,17 +1,25 @@
 package com.barili.survey.admin;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.containsString;
 
+import com.barili.survey.response.SurveyResponseRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,6 +42,12 @@ class AdminAuthIntegrationTest {
 
     @Autowired
     private AdminAccountRepository adminAccountRepository;
+
+    @Autowired
+    private SurveyResponseRepository responseRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void seedTestAdmin() {
@@ -113,6 +127,54 @@ class AdminAuthIntegrationTest {
 
         mockMvc.perform(get("/api/survey-links/{token}", token))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void authenticatedAdminCanDeleteResponseAndUnauthenticatedRequestsAreRejected() throws Exception {
+        String sessionCookie = login();
+        MvcResult linkResult = mockMvc.perform(post("/api/admin/survey-links")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userGroup\":\"STUDENT\",\"expiresInHours\":24}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String link = objectMapper.readTree(linkResult.getResponse().getContentAsString()).get("link").asText();
+        String token = link.substring(link.lastIndexOf("/survey/") + "/survey/".length());
+
+        String submission = "{\"linkToken\":\"" + token
+                + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
+                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
+                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
+                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
+                + "\"otherAnswers\":{}}";
+        MvcResult submissionResult = mockMvc.perform(post("/api/surveys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(submission))
+                .andExpect(status().isCreated())
+                .andReturn();
+        UUID responseId = UUID.fromString(objectMapper.readTree(submissionResult.getResponse().getContentAsString())
+                .get("id").asText());
+
+        mockMvc.perform(options("/api/admin/responses/{id}", responseId)
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "DELETE"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("DELETE")));
+        mockMvc.perform(delete("/api/admin/responses/{id}", responseId))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/api/admin/responses/{id}", responseId)
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isNoContent());
+
+        Assertions.assertTrue(responseRepository.findById(responseId).isEmpty());
+        Assertions.assertEquals(0L, jdbcTemplate.queryForObject(
+                "select count(*) from survey_answers where response_id = ?", Long.class, responseId));
+        MvcResult responsesResult = mockMvc.perform(get("/api/admin/responses")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode responses = objectMapper.readTree(responsesResult.getResponse().getContentAsString());
+        Assertions.assertFalse(responses.findValuesAsText("id").contains(responseId.toString()));
     }
 
     private String login() throws Exception {
