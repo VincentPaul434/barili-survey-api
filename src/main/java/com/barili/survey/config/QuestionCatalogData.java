@@ -5,10 +5,8 @@ import com.barili.survey.question.QuestionRepository;
 import com.barili.survey.question.QuestionOption;
 import com.barili.survey.question.QuestionType;
 import com.barili.survey.question.UserGroup;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +27,21 @@ public class QuestionCatalogData {
             "school_dakit_elementary", "school_mantalongon_elementary", "school_gunting_elementary");
 
     private static final Map<String, List<String>> OPTIONS = Map.ofEntries(
+            Map.entry("S1", List.of("s_18_20", "s_21_25", "s_26_29", "s_30_plus", "prefer_not")),
+            Map.entry("S2", List.of("female", "male", "self_describe", "prefer_not")),
+            Map.entry("S3", List.of("senior_high", "college")),
+            Map.entry("S4", List.of("s_live_study_barili", "s_study_barili_live_elsewhere", "other", "prefer_not")),
+            Map.entry("S5", List.of("s_daily", "s_several_week", "s_several_month", "s_rarely", "s_never")),
+            Map.entry("S6", List.of("s_never", "s_once", "s_few_times", "s_monthly_plus", "prefer_not")),
+            Map.entry("S7", List.of("s_home", "s_campus", "school_library", "municipal_library", "computer_area", "s_commercial", "s_outdoor", "s_online_only", "other")),
+            Map.entry("S8", List.of("s_no_place", "s_limited_internet_outlets", "s_noise", "s_limited_seats", "s_travel", "s_hours", "s_access_difficulty", "s_no_difficulty", "other")),
+            Map.entry("S9", List.of("s_quiet_study", "s_group_rooms", "computer_internet", "s_research_learning", "s_coworking", "s_art_studio", "s_performance", "s_printing", "s_museum", "s_tourism_area", "s_community_room", "s_accessible_rest", "s_flexible_spaces", "other")),
+            Map.entry("S10", List.of("individual_study", "group_study", "s_research_digital", "s_local_history", "s_interactive_museum", "workshops", "s_cultural_performances", "s_student_exhibits", "s_community_events", "s_tourism_planning", "other")),
+            Map.entry("S11", List.of("s_interactive_maps", "s_digital_library", "s_qr_stories", "s_ar_exhibits", "s_vr_tours", "s_projection", "s_audio_stories", "s_route_planning", "s_none", "other")),
+            Map.entry("S12", List.of("s_very_important", "s_important", "s_neutral", "s_not_important", "s_not_important_at_all", "prefer_not")),
+            Map.entry("S13", List.of("s_more_learning", "s_access_information", "s_more_culture", "s_better_tourism", "s_more_jobs", "s_local_economy", "s_cultural_appreciation", "s_accessible_public", "s_no_benefit", "other")),
+            Map.entry("S14", List.of("s_strongly_support", "s_support", "s_not_sure", "s_do_not_support", "s_strongly_do_not_support")),
+            Map.entry("S17", List.of("s_natural_light", "s_acoustic", "s_thermal", "s_tactile", "s_biophilic", "s_wayfinding", "s_flexible_multisensory")),
             Map.entry("A1", List.of("below_12", "12_14", "15_17", "18_or_older", "prefer_not")),
             Map.entry("A2", List.of("female", "male", "self_describe", "prefer_not")),
             Map.entry("A3", List.of("junior_high", "senior_high", "college", "technical", "other")),
@@ -79,7 +92,7 @@ public class QuestionCatalogData {
                             repository.save(question);
                         });
                 ensureBarangayQuestions(repository);
-                ensureStudentSchoolQuestion(repository);
+                ensureRevisedStudentQuestions(repository);
                 return;
             }
             repository.saveAll(List.of(
@@ -133,6 +146,7 @@ public class QuestionCatalogData {
                     question("D11", 11, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D11"),
                     question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12")
             ));
+            ensureRevisedStudentQuestions(repository);
         };
     }
 
@@ -166,35 +180,29 @@ public class QuestionCatalogData {
         }
     }
 
-    private static void ensureStudentSchoolQuestion(QuestionRepository repository) {
-        Question schoolQuestion = repository.findByCode("A14").orElse(null);
-        if (schoolQuestion == null) {
-            repository.save(question("A14", 4, UserGroup.STUDENT, QuestionType.SINGLE, "question.A14", true));
-        } else {
-            schoolQuestion.updateTypeAndRequired(QuestionType.SINGLE, true);
-            Set<String> optionKeys = new HashSet<>(schoolQuestion.getOptions().stream()
-                    .map(QuestionOption::getOptionKey)
-                    .toList());
-            int displayOrder = schoolQuestion.getOptions().stream()
-                    .mapToInt(QuestionOption::getDisplayOrder)
-                    .max()
-                    .orElse(0) + 1;
-            for (String optionKey : SCHOOL_OPTIONS) {
-                if (optionKeys.add(optionKey)) {
-                    schoolQuestion.addOption(new QuestionOption(optionKey, displayOrder++, false));
-                }
-            }
-            repository.save(schoolQuestion);
-        }
-
-        List<String> studentQuestionOrder = List.of(
-                "A1", "A2", "A3", "A14", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12");
-        for (int index = 0; index < studentQuestionOrder.size(); index++) {
-            int displayNumber = index + 1;
-            repository.findByCode(studentQuestionOrder.get(index)).ifPresent(question -> {
-                question.updateDisplayNumber(displayNumber);
+    private static void ensureRevisedStudentQuestions(QuestionRepository repository) {
+        for (String retiredCode : List.of("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A14")) {
+            repository.findByCode(retiredCode).ifPresent(question -> {
+                question.deactivate();
                 repository.save(question);
             });
+        }
+
+        for (int number = 1; number <= 17; number++) {
+            String code = "S" + number;
+            Question existing = repository.findByCode(code).orElse(null);
+            if (existing != null) {
+                existing.activate();
+                existing.updateDisplayNumber(number);
+                repository.save(existing);
+                continue;
+            }
+            QuestionType type = switch (number) {
+                case 7, 8, 9, 10, 11, 13, 17 -> QuestionType.MULTI;
+                case 15, 16 -> QuestionType.TEXT;
+                default -> QuestionType.SINGLE;
+            };
+            repository.save(question(code, number, UserGroup.STUDENT, type, "question." + code, true));
         }
     }
 

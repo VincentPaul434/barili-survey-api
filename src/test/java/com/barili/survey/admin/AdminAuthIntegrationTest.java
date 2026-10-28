@@ -92,13 +92,7 @@ class AdminAuthIntegrationTest {
         mockMvc.perform(get("/api/survey-links/{token}", token))
                 .andExpect(status().isOk());
 
-        String submission = "{\"linkToken\":\"" + token
-                + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
-                + "\"consentGiven\":true,"
-                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\",\"A14\":\"school_ctu_barili\","
-                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
-                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
-                + "\"otherAnswers\":{}}";
+        String submission = studentSubmission(token);
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(submission))
@@ -137,12 +131,7 @@ class AdminAuthIntegrationTest {
                 .andReturn();
         String link = objectMapper.readTree(linkResult.getResponse().getContentAsString()).get("link").asText();
         String token = link.substring(link.lastIndexOf("/survey/") + "/survey/".length());
-        String submission = "{\"linkToken\":\"" + token
-                + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\",\"consentGiven\":true,"
-                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\",\"A14\":\"school_ctu_barili\","
-                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
-                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
-                + "\"otherAnswers\":{}}";
+        String submission = studentSubmission(token);
         MvcResult submissionResult = mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(submission))
@@ -186,7 +175,7 @@ class AdminAuthIntegrationTest {
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"linkToken\":\"" + token + "\",\"userGroup\":\"STUDENT\","
-                                + "\"locale\":\"en\",\"answers\":{\"A1\":\"below_12\"},\"otherAnswers\":{}}"))
+                                + "\"locale\":\"en\",\"answers\":{\"S1\":\"s_18_20\"},\"otherAnswers\":{}}"))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(get("/api/survey-links/{token}", token))
@@ -195,12 +184,7 @@ class AdminAuthIntegrationTest {
 
     @Test
     void submissionWithoutSurveyLinkIsRejected() throws Exception {
-        String submission = "{\"userGroup\":\"STUDENT\",\"locale\":\"en\","
-                + "\"consentGiven\":true,"
-                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\","
-                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
-                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
-                + "\"otherAnswers\":{}}";
+        String submission = studentSubmission("unused").replace("\"linkToken\":\"unused\",", "");
 
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -220,13 +204,7 @@ class AdminAuthIntegrationTest {
                 .andReturn();
         String link = objectMapper.readTree(linkResult.getResponse().getContentAsString()).get("link").asText();
         String token = link.substring(link.lastIndexOf("/survey/") + "/survey/".length());
-        String submission = "{\"linkToken\":\"" + token
-                + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
-                + "\"consentGiven\":true,"
-                + "\"answers\":{\"A1\":\"below_12\",\"A2\":\"female\",\"A3\":\"junior_high\",\"A14\":\"school_ctu_barili\","
-                + "\"A4\":\"very_easy\",\"A5\":[\"school_library\"],\"A6\":\"home\","
-                + "\"A7\":[\"individual_study\"],\"A8\":[\"quiet_reading\"],\"A9\":[\"interactive_screens\"]},"
-                + "\"otherAnswers\":{}}";
+        String submission = studentSubmission(token);
 
         mockMvc.perform(post("/api/surveys")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -254,5 +232,16 @@ class AdminAuthIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         return result.getResponse().getCookie("admin_session").getValue();
+    }
+
+    private String studentSubmission(String token) {
+        return "{\"linkToken\":\"" + token + "\",\"userGroup\":\"STUDENT\",\"locale\":\"en\","
+                + "\"consentGiven\":true,\"answers\":{"
+                + "\"S1\":\"s_18_20\",\"S2\":\"female\",\"S3\":\"college\",\"S4\":\"s_live_study_barili\","
+                + "\"S5\":\"s_daily\",\"S6\":\"s_once\",\"S7\":[\"s_home\"],\"S8\":[\"s_no_difficulty\"],"
+                + "\"S9\":[\"s_quiet_study\"],\"S10\":[\"individual_study\"],\"S11\":[\"s_interactive_maps\"],"
+                + "\"S12\":\"s_important\",\"S13\":[\"s_more_learning\"],\"S14\":\"s_support\","
+                + "\"S15\":\"Local history\",\"S16\":\"More quiet study areas\",\"S17\":[\"s_natural_light\"]},"
+                + "\"otherAnswers\":{}}";
     }
 }
