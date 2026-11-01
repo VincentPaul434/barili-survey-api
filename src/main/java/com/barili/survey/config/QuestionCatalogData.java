@@ -63,6 +63,19 @@ public class QuestionCatalogData {
             Map.entry("B9", List.of("tour_guide", "cooking_farming_crafts", "sell_local_products", "cultural_event_space", "weekend_market", "meeting_event_space", "tour_booking", "shared_group_space", "other")),
             Map.entry("B13", BARANGAY_OPTIONS),
             Map.entry("B14", List.of("s_natural_light", "s_acoustic", "s_thermal", "s_tactile", "s_biophilic", "s_wayfinding", "s_flexible_multisensory")),
+            Map.entry("R1", List.of("18_24", "25_34", "35_44", "45_54", "55_64", "65_or_older", "prefer_not")),
+            Map.entry("R2", List.of("female", "male", "self_describe", "prefer_not")),
+            Map.entry("R3", List.of("government_employee", "private_employee", "business_owner", "farmer_fisher", "homemaker", "retired", "product_maker", "tourism_worker", "other", "prefer_not")),
+            Map.entry("R5", List.of("r_municipal_library", "r_museum_heritage", "r_tourism_office", "r_municipal_barangay_hall", "r_public_plaza", "r_community_events", "r_tourism_guide", "r_none", "other")),
+            Map.entry("R6", List.of("r_need_very_much", "r_need_it", "r_not_sure", "r_do_not_need", "prefer_not")),
+            Map.entry("R7", List.of("r_books_info_computers", "r_history_culture", "r_tourism_assistance", "r_community_meetings", "r_cultural_performances", "r_local_products", "r_livelihood_training", "r_seating_rest", "r_accessible_facilities", "other")),
+            Map.entry("R8", List.of("r_welcome_information", "r_library_reading", "r_museum_history", "r_tourism_maps", "r_community_meeting_room", "r_workshop_area", "r_local_crafts", "r_performance_area", "r_outdoor_shade", "r_accessible_toilets", "other")),
+            Map.entry("R9", List.of("r_reading_research", "r_learn_barili", "r_tourism_information", "r_community_meetings", "r_cultural_events", "r_livelihood_workshops", "r_local_fairs", "r_children_youth", "r_older_adults", "other")),
+            Map.entry("R10", List.of("r_improve_very_much", "r_improve_it", "r_access_not_sure", "r_improve_a_little", "r_would_not_improve", "prefer_not")),
+            Map.entry("R11", List.of("s_very_important", "s_important", "s_neutral", "s_not_important", "s_not_important_at_all", "prefer_not")),
+            Map.entry("R12", List.of("r_better_access", "r_history_learning", "r_tourism_support", "r_community_activities", "r_local_livelihoods", "r_community_pride", "r_no_benefit", "other")),
+            Map.entry("R13", List.of("r_digital_maps", "r_interactive_history", "r_audio_interviews", "r_qr_information", "r_digital_library", "r_virtual_previews", "r_none", "other")),
+            Map.entry("R16", List.of("s_natural_light", "s_acoustic", "s_thermal", "s_tactile", "s_biophilic", "s_wayfinding", "s_flexible_multisensory")),
             Map.entry("C1", List.of("18_24", "25_34", "35_44", "45_59", "60_or_older", "prefer_not")),
             Map.entry("C2", List.of("female", "male", "prefer_not")),
             Map.entry("C3", List.of("barili", "another_cebu_town", "outside_cebu", "outside_philippines", "prefer_not")),
@@ -94,7 +107,7 @@ public class QuestionCatalogData {
                         });
                 ensureBarangayQuestions(repository);
                 ensureRevisedStudentQuestions(repository);
-                ensureResidentDesignQuestion(repository);
+                ensurePdfResidentQuestions(repository);
                 return;
             }
             repository.saveAll(List.of(
@@ -124,7 +137,6 @@ public class QuestionCatalogData {
                     question("B11", 11, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B11"),
                     question("B12", 12, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B12"),
                     question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true),
-                    question("B14", 14, UserGroup.COMMUNITY_RESIDENT, QuestionType.MULTI, "question.B14"),
                     question("C1", 1, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C1"),
                     question("C2", 2, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C2"),
                     question("C3", 3, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C3"),
@@ -150,7 +162,7 @@ public class QuestionCatalogData {
                     question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12")
             ));
             ensureRevisedStudentQuestions(repository);
-            ensureResidentDesignQuestion(repository);
+            ensurePdfResidentQuestions(repository);
         };
     }
 
@@ -210,19 +222,34 @@ public class QuestionCatalogData {
         }
     }
 
-    private static void ensureResidentDesignQuestion(QuestionRepository repository) {
-        Question existing = repository.findByCode("B14").orElse(null);
-        if (existing == null) {
-            repository.save(question("B14", 14, UserGroup.COMMUNITY_RESIDENT,
-                    QuestionType.MULTI, "question.B14"));
-            return;
+    private static void ensurePdfResidentQuestions(QuestionRepository repository) {
+        for (int number = 1; number <= 14; number++) {
+            repository.findByCode("B" + number).ifPresent(question -> {
+                question.deactivate();
+                repository.save(question);
+            });
         }
 
-        existing.activate();
-        existing.updateDisplayNumber(14);
-        existing.updateTypeAndRequired(QuestionType.MULTI, true);
-        if (existing.getOptions().isEmpty()) addOptions(existing);
-        repository.save(existing);
+        for (int number = 1; number <= 16; number++) {
+            String code = "R" + number;
+            QuestionType type = switch (number) {
+                case 1, 2, 3, 6, 10, 11 -> QuestionType.SINGLE;
+                case 4, 14, 15 -> QuestionType.TEXT;
+                default -> QuestionType.MULTI;
+            };
+            Question existing = repository.findByCode(code).orElse(null);
+            if (existing == null) {
+                repository.save(question(code, number, UserGroup.COMMUNITY_RESIDENT,
+                        type, "question." + code, true));
+                continue;
+            }
+
+            existing.activate();
+            existing.updateDisplayNumber(number);
+            existing.updateTypeAndRequired(type, true);
+            if (existing.getOptions().isEmpty()) addOptions(existing);
+            repository.save(existing);
+        }
     }
 
     private static Question question(String code, int number, UserGroup group,

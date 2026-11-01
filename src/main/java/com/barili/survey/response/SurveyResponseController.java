@@ -25,6 +25,9 @@ import org.springframework.cache.annotation.CacheEvict;
 @RestController
 @RequestMapping("/api/surveys")
 public class SurveyResponseController {
+    private static final Map<String, Integer> MAX_MULTI_SELECTIONS = Map.of("R7", 3, "R12", 3);
+    private static final Map<String, String> EXCLUSIVE_MULTI_OPTIONS = Map.of("R5", "r_none", "R13", "r_none");
+
     private final SurveyResponseRepository responseRepository;
     private final QuestionRepository questionRepository;
     private final ObjectMapper objectMapper;
@@ -115,6 +118,14 @@ public class SurveyResponseController {
                         throw badRequest("Invalid option for " + question.getCode());
                     }
                     if (!selected.add(option)) throw badRequest("Duplicate option for " + question.getCode());
+                }
+                Integer maxSelections = MAX_MULTI_SELECTIONS.get(question.getCode());
+                if (maxSelections != null && values.size() > maxSelections) {
+                    throw badRequest("Too many selections for " + question.getCode());
+                }
+                String exclusiveOption = EXCLUSIVE_MULTI_OPTIONS.get(question.getCode());
+                if (exclusiveOption != null && selected.contains(exclusiveOption) && selected.size() > 1) {
+                    throw badRequest("Exclusive option selected with other answers for " + question.getCode());
                 }
             } else if (question.getType() == QuestionType.SINGLE) {
                 if (!(value instanceof String option) || option.isBlank() || (!optionKeys.isEmpty() && !optionKeys.contains(option))) {
