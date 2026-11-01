@@ -62,6 +62,7 @@ public class QuestionCatalogData {
             Map.entry("B8", List.of("solar_charging", "local_plant_garden", "promote_local_business", "livelihood_training", "flexible_room", "comfortable_inclusive_area", "tourism_maps_guides", "shaded_rest_area", "digital_museum", "other")),
             Map.entry("B9", List.of("tour_guide", "cooking_farming_crafts", "sell_local_products", "cultural_event_space", "weekend_market", "meeting_event_space", "tour_booking", "shared_group_space", "other")),
             Map.entry("B13", BARANGAY_OPTIONS),
+            Map.entry("B14", List.of("s_natural_light", "s_acoustic", "s_thermal", "s_tactile", "s_biophilic", "s_wayfinding", "s_flexible_multisensory")),
             Map.entry("C1", List.of("18_24", "25_34", "35_44", "45_59", "60_or_older", "prefer_not")),
             Map.entry("C2", List.of("female", "male", "prefer_not")),
             Map.entry("C3", List.of("barili", "another_cebu_town", "outside_cebu", "outside_philippines", "prefer_not")),
@@ -93,6 +94,7 @@ public class QuestionCatalogData {
                         });
                 ensureBarangayQuestions(repository);
                 ensureRevisedStudentQuestions(repository);
+                ensureResidentDesignQuestion(repository);
                 return;
             }
             repository.saveAll(List.of(
@@ -122,6 +124,7 @@ public class QuestionCatalogData {
                     question("B11", 11, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B11"),
                     question("B12", 12, UserGroup.COMMUNITY_RESIDENT, QuestionType.TEXT, "question.B12"),
                     question("B13", 13, UserGroup.COMMUNITY_RESIDENT, QuestionType.SINGLE, "question.B13", true),
+                    question("B14", 14, UserGroup.COMMUNITY_RESIDENT, QuestionType.MULTI, "question.B14"),
                     question("C1", 1, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C1"),
                     question("C2", 2, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C2"),
                     question("C3", 3, UserGroup.TOURIST_VISITOR, QuestionType.SINGLE, "question.C3"),
@@ -147,6 +150,7 @@ public class QuestionCatalogData {
                     question("D12", 12, UserGroup.LGU_PERSONNEL, QuestionType.TEXT, "question.D12")
             ));
             ensureRevisedStudentQuestions(repository);
+            ensureResidentDesignQuestion(repository);
         };
     }
 
@@ -204,6 +208,21 @@ public class QuestionCatalogData {
             };
             repository.save(question(code, number, UserGroup.STUDENT, type, "question." + code, true));
         }
+    }
+
+    private static void ensureResidentDesignQuestion(QuestionRepository repository) {
+        Question existing = repository.findByCode("B14").orElse(null);
+        if (existing == null) {
+            repository.save(question("B14", 14, UserGroup.COMMUNITY_RESIDENT,
+                    QuestionType.MULTI, "question.B14"));
+            return;
+        }
+
+        existing.activate();
+        existing.updateDisplayNumber(14);
+        existing.updateTypeAndRequired(QuestionType.MULTI, true);
+        if (existing.getOptions().isEmpty()) addOptions(existing);
+        repository.save(existing);
     }
 
     private static Question question(String code, int number, UserGroup group,
