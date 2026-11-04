@@ -128,7 +128,9 @@ class AdminAuthIntegrationTest {
                         .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.questions[0].questionCode").value("S15"))
-                .andExpect(jsonPath("$.questions[0].answeredResponses").value(1));
+                .andExpect(jsonPath("$.questions[0].answeredResponses").value(1))
+                .andExpect(jsonPath("$.questions[0].commonAnswers[0].answer").value("Local history"))
+                .andExpect(jsonPath("$.questions[0].commonAnswers[0].count").value(1));
 
         mockMvc.perform(get("/api/admin/responses/analytics/open-ended/S15")
                         .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))

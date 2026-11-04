@@ -5,5 +5,6 @@ import com.barili.survey.question.UserGroup;
 public record AdminOpenEndedQuestionSummary(
         String questionCode,
         UserGroup userGroup,
-        long answeredResponses
+        long answeredResponses,
+        java.util.List<AdminCommonAnswer> commonAnswers
 ) {}

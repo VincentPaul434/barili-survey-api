@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AdminResponseService {
+    private static final int COMMON_ANSWER_LIMIT = 5;
+
     private final SurveyResponseRepository responseRepository;
     private final SurveyAnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
@@ -181,7 +184,8 @@ public class AdminResponseService {
                 .map(question -> new AdminOpenEndedQuestionSummary(
                         question.getCode(),
                         question.getUserGroup(),
-                        responseCounts.getOrDefault(question.getCode(), 0L)))
+                        responseCounts.getOrDefault(question.getCode(), 0L),
+                        commonAnswers(question.getCode(), userGroup)))
                 .toList();
         return new AdminOpenEndedSummary(totalResponses, questions);
     }
@@ -222,5 +226,18 @@ public class AdminResponseService {
             // Single-choice answers are stored as plain option keys.
         }
         return List.of(value);
+    }
+
+    private List<AdminCommonAnswer> commonAnswers(String questionCode, UserGroup userGroup) {
+        return answerRepository.findCommonOpenEndedAnswers(
+                        questionCode,
+                        userGroup,
+                        QuestionType.TEXT,
+                        PageRequest.of(0, COMMON_ANSWER_LIMIT))
+                .stream()
+                .map(row -> new AdminCommonAnswer(
+                        (String) row[0],
+                        ((Number) row[1]).longValue()))
+                .toList();
     }
 }

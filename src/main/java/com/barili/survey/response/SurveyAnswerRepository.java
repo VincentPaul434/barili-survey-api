@@ -40,6 +40,26 @@ public interface SurveyAnswerRepository extends JpaRepository<SurveyAnswer, Long
             @Param("textType") QuestionType textType);
 
     @Query("""
+            select trim(a.textValue), count(a.id)
+            from SurveyAnswer a
+            join a.question q
+            join a.response r
+            where q.code = :questionCode
+              and q.active = true
+              and q.type = :textType
+              and (:userGroup is null or r.userGroup = :userGroup)
+              and a.textValue is not null
+              and trim(a.textValue) <> ''
+            group by trim(a.textValue)
+            order by count(a.id) desc, trim(a.textValue) asc
+            """)
+    List<Object[]> findCommonOpenEndedAnswers(
+            @Param("questionCode") String questionCode,
+            @Param("userGroup") UserGroup userGroup,
+            @Param("textType") QuestionType textType,
+            Pageable pageable);
+
+    @Query("""
             select a.textValue
             from SurveyAnswer a
             join a.question q
