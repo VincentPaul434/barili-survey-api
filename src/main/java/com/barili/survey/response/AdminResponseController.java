@@ -51,6 +51,29 @@ public class AdminResponseController {
         return responseService.analytics(userGroup);
     }
 
+    @GetMapping("/analytics/open-ended/questions")
+    @Transactional(readOnly = true)
+    public AdminOpenEndedSummary openEndedSummary(
+            @CookieValue(value = SESSION_COOKIE, required = false) String sessionToken,
+            @RequestParam(required = false) UserGroup userGroup) {
+        sessionService.requireValid(sessionToken);
+        return responseService.openEndedSummary(userGroup);
+    }
+
+    @GetMapping("/analytics/open-ended/{questionCode}")
+    @Transactional(readOnly = true)
+    public AdminOpenEndedResponsePage openEndedResponses(
+            @CookieValue(value = SESSION_COOKIE, required = false) String sessionToken,
+            @PathVariable String questionCode,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) UserGroup userGroup) {
+        sessionService.requireValid(sessionToken);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 20);
+        return responseService.openEndedResponses(questionCode, userGroup, PageRequest.of(safePage, safeSize));
+    }
+
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
     public AdminSurveyResponse details(

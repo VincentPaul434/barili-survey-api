@@ -6,6 +6,5 @@ public record AdminSurveyAnalytics(
         long totalResponses,
         List<AdminGroupCount> groupCounts,
         List<AdminChoiceCount> topChoices,
-        List<AdminQuestionAnalytics> questionAnalytics,
-        List<AdminOpenEndedAnalytics> openEndedAnalytics
+        List<AdminQuestionAnalytics> questionAnalytics
 ) {}

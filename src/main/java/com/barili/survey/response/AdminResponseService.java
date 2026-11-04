@@ -9,27 +9,33 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class AdminResponseService {
     private final SurveyResponseRepository responseRepository;
+    private final SurveyAnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
     private final ObjectMapper objectMapper;
 
     public AdminResponseService(SurveyResponseRepository responseRepository,
+                                SurveyAnswerRepository answerRepository,
                                 QuestionRepository questionRepository,
                                 ObjectMapper objectMapper) {
         this.responseRepository = responseRepository;
+        this.answerRepository = answerRepository;
         this.questionRepository = questionRepository;
         this.objectMapper = objectMapper;
     }
@@ -74,7 +80,7 @@ public class AdminResponseService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = {"adminResponses", "adminAnalytics"}, allEntries = true)
+    @CacheEvict(cacheNames = {"adminResponses", "adminAnalytics", "adminOpenEndedQuestions", "adminOpenEndedResponses"}, allEntries = true)
     public void delete(UUID id) {
         var response = responseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Response not found"));
@@ -84,35 +90,45 @@ public class AdminResponseService {
     @Cacheable(cacheNames = "adminAnalytics", key = "#userGroup == null ? 'ALL' : #userGroup.name()")
     @Transactional(readOnly = true)
     public AdminSurveyAnalytics analytics(UserGroup userGroup) {
-        List<SurveyResponse> responses = responseRepository.findAll().stream()
-                .filter(response -> userGroup == null || response.getUserGroup() == userGroup)
+        List<Question> choiceQuestions = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
+                .filter(question -> question.getType() != QuestionType.TEXT)
+                .filter(question -> userGroup == null || question.getUserGroup() == userGroup)
+                .sorted(Comparator.comparing(Question::getUserGroup)
+                        .thenComparingInt(Question::getDisplayNumber))
                 .toList();
-        Map<UserGroup, Long> groups = new EnumMap<>(UserGroup.class);
+        Map<String, Set<String>> validOptions = choiceQuestions.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Question::getCode,
+                        question -> question.getOptions().stream()
+                                .map(option -> option.getOptionKey())
+                                .collect(java.util.stream.Collectors.toCollection(HashSet::new))));
+
         Map<String, Long> choices = new HashMap<>();
         Map<String, Long> answeredCounts = new HashMap<>();
-        Map<String, List<String>> openEndedResponses = new HashMap<>();
+        for (AdminChoiceAnswerRow answer : answerRepository.findChoiceAnswerRows(userGroup, QuestionType.TEXT)) {
+            Set<String> questionOptions = validOptions.get(answer.questionCode());
+            if (questionOptions == null) continue;
 
-        for (SurveyResponse response : responses) {
-            groups.merge(response.getUserGroup(), 1L, Long::sum);
-            for (SurveyAnswer answer : response.getAnswers()) {
-                if (answer.getQuestion().getType() == QuestionType.TEXT) {
-                    var text = answer.getDisplayValue();
-                    if (text != null && !text.isBlank()) {
-                        openEndedResponses.computeIfAbsent(answer.getQuestion().getCode(), ignored -> new java.util.ArrayList<>())
-                                .add(text.trim());
-                    }
-                    continue;
-                }
-                var options = answer.getQuestion().getOptions();
-                List<String> selected = selectedOptions(answer.getDisplayValue()).stream()
-                        .filter(optionKey -> options.stream().anyMatch(option -> optionKey.equals(option.getOptionKey())))
-                        .toList();
-                if (selected.isEmpty()) continue;
-                answeredCounts.merge(answer.getQuestion().getCode(), 1L, Long::sum);
-                for (String optionKey : selected) {
-                    choices.merge(answer.getQuestion().getCode() + "::" + optionKey, 1L, Long::sum);
-                }
+            List<String> selected = selectedOptions(answer.displayValue()).stream()
+                    .filter(questionOptions::contains)
+                    .distinct()
+                    .toList();
+            if (selected.isEmpty()) continue;
+            answeredCounts.merge(answer.questionCode(), 1L, Long::sum);
+            for (String optionKey : selected) {
+                choices.merge(answer.questionCode() + "::" + optionKey, 1L, Long::sum);
             }
+        }
+
+        long totalResponses = userGroup == null
+                ? responseRepository.count()
+                : responseRepository.countByUserGroup(userGroup);
+        Map<UserGroup, Long> groups = new EnumMap<>(UserGroup.class);
+        for (Object[] row : responseRepository.countGroupedByUserGroup()) {
+            groups.put((UserGroup) row[0], ((Number) row[1]).longValue());
+        }
+        if (userGroup != null) {
+            groups.replaceAll((group, count) -> group == userGroup ? count : 0L);
         }
 
         List<AdminGroupCount> groupCounts = Arrays.stream(UserGroup.values())
@@ -129,11 +145,7 @@ public class AdminResponseService {
                 .limit(8)
                 .toList();
 
-        List<AdminQuestionAnalytics> questionAnalytics = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
-                .filter(question -> question.getType() != QuestionType.TEXT)
-                .filter(question -> userGroup == null || question.getUserGroup() == userGroup)
-                .sorted(Comparator.comparing(Question::getUserGroup)
-                        .thenComparingInt(Question::getDisplayNumber))
+        List<AdminQuestionAnalytics> questionAnalytics = choiceQuestions.stream()
                 .map(question -> new AdminQuestionAnalytics(
                         question.getCode(),
                         question.getUserGroup(),
@@ -147,22 +159,52 @@ public class AdminResponseService {
                                 .toList()))
                 .toList();
 
-        List<AdminOpenEndedAnalytics> openEndedAnalytics = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
+        return new AdminSurveyAnalytics(totalResponses, groupCounts, topChoices, questionAnalytics);
+    }
+
+    @Cacheable(cacheNames = "adminOpenEndedQuestions", key = "#userGroup == null ? 'ALL' : #userGroup.name()")
+    @Transactional(readOnly = true)
+    public AdminOpenEndedSummary openEndedSummary(UserGroup userGroup) {
+        long totalResponses = userGroup == null
+                ? responseRepository.count()
+                : responseRepository.countByUserGroup(userGroup);
+        Map<String, Long> responseCounts = new HashMap<>();
+        for (Object[] row : answerRepository.countOpenEndedResponses(userGroup, QuestionType.TEXT)) {
+            responseCounts.put((String) row[0], ((Number) row[2]).longValue());
+        }
+
+        List<AdminOpenEndedQuestionSummary> questions = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
                 .filter(question -> question.getType() == QuestionType.TEXT)
                 .filter(question -> userGroup == null || question.getUserGroup() == userGroup)
                 .sorted(Comparator.comparing(Question::getUserGroup)
                         .thenComparingInt(Question::getDisplayNumber))
-                .map(question -> {
-                    List<String> responsesForQuestion = openEndedResponses.getOrDefault(question.getCode(), List.of());
-                    return new AdminOpenEndedAnalytics(
-                            question.getCode(),
-                            question.getUserGroup(),
-                            responsesForQuestion.size(),
-                            responsesForQuestion);
-                })
+                .map(question -> new AdminOpenEndedQuestionSummary(
+                        question.getCode(),
+                        question.getUserGroup(),
+                        responseCounts.getOrDefault(question.getCode(), 0L)))
                 .toList();
+        return new AdminOpenEndedSummary(totalResponses, questions);
+    }
 
-        return new AdminSurveyAnalytics(responses.size(), groupCounts, topChoices, questionAnalytics, openEndedAnalytics);
+    @Cacheable(cacheNames = "adminOpenEndedResponses", key = "#questionCode + ':' + (#userGroup == null ? 'ALL' : #userGroup.name()) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
+    @Transactional(readOnly = true)
+    public AdminOpenEndedResponsePage openEndedResponses(String questionCode, UserGroup userGroup, Pageable pageable) {
+        Question question = questionRepository.findByCodeAndActiveTrue(questionCode)
+                .filter(item -> item.getType() == QuestionType.TEXT)
+                .filter(item -> userGroup == null || item.getUserGroup() == userGroup)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Open-ended question not found"));
+        Page<String> page = answerRepository.findOpenEndedResponses(
+                question.getCode(),
+                userGroup,
+                QuestionType.TEXT,
+                pageable);
+        List<String> content = page.getContent().stream().map(String::trim).toList();
+        return new AdminOpenEndedResponsePage(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages());
     }
 
     private List<String> selectedOptions(String value) {
