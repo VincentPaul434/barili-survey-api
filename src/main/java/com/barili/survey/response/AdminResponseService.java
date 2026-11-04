@@ -90,11 +90,17 @@ public class AdminResponseService {
         Map<UserGroup, Long> groups = new EnumMap<>(UserGroup.class);
         Map<String, Long> choices = new HashMap<>();
         Map<String, Long> answeredCounts = new HashMap<>();
+        Map<String, List<String>> openEndedResponses = new HashMap<>();
 
         for (SurveyResponse response : responses) {
             groups.merge(response.getUserGroup(), 1L, Long::sum);
             for (SurveyAnswer answer : response.getAnswers()) {
                 if (answer.getQuestion().getType() == QuestionType.TEXT) {
+                    var text = answer.getDisplayValue();
+                    if (text != null && !text.isBlank()) {
+                        openEndedResponses.computeIfAbsent(answer.getQuestion().getCode(), ignored -> new java.util.ArrayList<>())
+                                .add(text.trim());
+                    }
                     continue;
                 }
                 var options = answer.getQuestion().getOptions();
@@ -141,7 +147,22 @@ public class AdminResponseService {
                                 .toList()))
                 .toList();
 
-        return new AdminSurveyAnalytics(responses.size(), groupCounts, topChoices, questionAnalytics);
+        List<AdminOpenEndedAnalytics> openEndedAnalytics = questionRepository.findAllByActiveTrueOrderByDisplayNumber().stream()
+                .filter(question -> question.getType() == QuestionType.TEXT)
+                .filter(question -> userGroup == null || question.getUserGroup() == userGroup)
+                .sorted(Comparator.comparing(Question::getUserGroup)
+                        .thenComparingInt(Question::getDisplayNumber))
+                .map(question -> {
+                    List<String> responsesForQuestion = openEndedResponses.getOrDefault(question.getCode(), List.of());
+                    return new AdminOpenEndedAnalytics(
+                            question.getCode(),
+                            question.getUserGroup(),
+                            responsesForQuestion.size(),
+                            responsesForQuestion);
+                })
+                .toList();
+
+        return new AdminSurveyAnalytics(responses.size(), groupCounts, topChoices, questionAnalytics, openEndedAnalytics);
     }
 
     private List<String> selectedOptions(String value) {

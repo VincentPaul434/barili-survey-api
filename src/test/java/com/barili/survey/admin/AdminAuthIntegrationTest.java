@@ -118,6 +118,14 @@ class AdminAuthIntegrationTest {
                         .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));
+
+        mockMvc.perform(get("/api/admin/responses/analytics")
+                        .cookie(new jakarta.servlet.http.Cookie("admin_session", sessionCookie)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openEndedAnalytics").isArray())
+                .andExpect(jsonPath("$.openEndedAnalytics[0].questionCode").value("S15"))
+                .andExpect(jsonPath("$.openEndedAnalytics[0].answeredResponses").value(1))
+                .andExpect(jsonPath("$.openEndedAnalytics[0].responses[0]").value("Local history"));
     }
 
     @Test
