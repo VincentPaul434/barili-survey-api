@@ -60,6 +60,23 @@ public interface SurveyAnswerRepository extends JpaRepository<SurveyAnswer, Long
             Pageable pageable);
 
     @Query("""
+            select trim(a.textValue)
+            from SurveyAnswer a
+            join a.question q
+            join a.response r
+            where q.code = :questionCode
+              and q.active = true
+              and q.type = :textType
+              and (:userGroup is null or r.userGroup = :userGroup)
+              and a.textValue is not null
+              and trim(a.textValue) <> ''
+            """)
+    List<String> findAllOpenEndedResponses(
+            @Param("questionCode") String questionCode,
+            @Param("userGroup") UserGroup userGroup,
+            @Param("textType") QuestionType textType);
+
+    @Query("""
             select a.textValue
             from SurveyAnswer a
             join a.question q

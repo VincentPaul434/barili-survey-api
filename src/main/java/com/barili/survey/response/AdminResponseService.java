@@ -27,6 +27,27 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AdminResponseService {
     private static final int COMMON_ANSWER_LIMIT = 5;
+    private static final String BARANGAY_QUESTION_CODE = "R4";
+    private static final List<BarangayKeyword> BARANGAY_KEYWORDS = List.of(
+            new BarangayKeyword("Azucena", List.of("azucena")),
+            new BarangayKeyword("Bolocboloc", List.of("bolocboloc")),
+            new BarangayKeyword("Cagay", List.of("cagay")),
+            new BarangayKeyword("Campangga", List.of("campangga")),
+            new BarangayKeyword("Candugay", List.of("candugay")),
+            new BarangayKeyword("Dakit", List.of("dakit")),
+            new BarangayKeyword("Guibuangan", List.of("guibuangan")),
+            new BarangayKeyword("Gunting", List.of("gunting")),
+            new BarangayKeyword("Japitan", List.of("japitan")),
+            new BarangayKeyword("Kalubihan", List.of("kalubihan")),
+            new BarangayKeyword("Maghanoy", List.of("maghanoy")),
+            new BarangayKeyword("Maigang", List.of("maigang")),
+            new BarangayKeyword("Mantalongon", List.of("mantalongon")),
+            new BarangayKeyword("Nasipit", List.of("nasipit")),
+            new BarangayKeyword("Patupat", List.of("patupat")),
+            new BarangayKeyword("Polacion", List.of("polacion", "poblacion")),
+            new BarangayKeyword("San Rafael", List.of("san rafael", "sanrafael")),
+            new BarangayKeyword("Santa Ana", List.of("santa ana", "santaana", "sta ana", "sta. ana")),
+            new BarangayKeyword("Sayaw", List.of("sayaw")));
 
     private final SurveyResponseRepository responseRepository;
     private final SurveyAnswerRepository answerRepository;
@@ -229,6 +250,9 @@ public class AdminResponseService {
     }
 
     private List<AdminCommonAnswer> commonAnswers(String questionCode, UserGroup userGroup) {
+        if (BARANGAY_QUESTION_CODE.equals(questionCode)) {
+            return barangayKeywordAnswers(userGroup);
+        }
         return answerRepository.findCommonOpenEndedAnswers(
                         questionCode,
                         userGroup,
@@ -239,5 +263,35 @@ public class AdminResponseService {
                         (String) row[0],
                         ((Number) row[1]).longValue()))
                 .toList();
+    }
+
+    private List<AdminCommonAnswer> barangayKeywordAnswers(UserGroup userGroup) {
+        Map<String, Long> counts = new HashMap<>();
+        for (String response : answerRepository.findAllOpenEndedResponses(
+                BARANGAY_QUESTION_CODE,
+                userGroup,
+                QuestionType.TEXT)) {
+            String normalizedResponse = normalizeBarangayText(response);
+            BARANGAY_KEYWORDS.stream()
+                    .filter(keyword -> keyword.matches(normalizedResponse))
+                    .findFirst()
+                    .ifPresent(keyword -> counts.merge(keyword.label(), 1L, Long::sum));
+        }
+        return counts.entrySet().stream()
+                .map(entry -> new AdminCommonAnswer(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparingLong(AdminCommonAnswer::count).reversed()
+                        .thenComparing(AdminCommonAnswer::answer))
+                .limit(COMMON_ANSWER_LIMIT)
+                .toList();
+    }
+
+    private static String normalizeBarangayText(String value) {
+        return value.toLowerCase().replaceAll("[^a-z0-9]+", " ").trim();
+    }
+
+    private record BarangayKeyword(String label, List<String> keywords) {
+        private boolean matches(String normalizedResponse) {
+            return keywords.stream().anyMatch(keyword -> normalizedResponse.contains(normalizeBarangayText(keyword)));
+        }
     }
 }
